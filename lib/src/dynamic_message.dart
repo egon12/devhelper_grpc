@@ -119,8 +119,8 @@ class DynamicMessage extends GeneratedMessage {
   }
 
   factory DynamicMessage.fromDescriptor(
-      DescriptorProto dp, FileDescriptorProto fdp) {
-    final info = _fromDescriptor(dp, fdp.package);
+      DescriptorProto dp, String packageName) {
+    final info = _fromDescriptor(dp, packageName);
     final fieldTag = _genMapNumber(dp);
     final fieldType = _genMapType2(dp);
 

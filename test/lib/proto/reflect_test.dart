@@ -31,8 +31,8 @@ void main() {
     final fdp = await sc.fdp(method.inputType.substring(1));
     final outputDP = await sc.message(method.outputType.substring(1));
 
-    final dm = DynamicMessage.fromDescriptor(inputDP, fdp);
-    final odm = DynamicMessage.fromDescriptor(outputDP, fdp);
+    final dm = DynamicMessage.fromDescriptor(inputDP, fdp.package);
+    final odm = DynamicMessage.fromDescriptor(outputDP, fdp.package);
 
     dm.setString(1, "hallo");
 

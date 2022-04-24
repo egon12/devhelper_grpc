@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:grpc/grpc.dart';
 
+import '../usecase/call.dart';
+
+/*
 class QueryController {
   TextEditingController textController = TextEditingController();
 
@@ -21,7 +24,7 @@ class QueryController {
   }
 
   getCallExecutor(int pos, CallBlocks callBlocks) {
-    final callBlock = callBlocks.get(pos);
+    final callBlock = callBlocks.at(pos);
     final executor = callBlock.createExecutor(cz);
     return executor;
   }
@@ -42,3 +45,6 @@ class _QueryScreen extends State<QueryScreen> {
     return Container();
   }
 }
+
+
+*/

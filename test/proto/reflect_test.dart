@@ -1,5 +1,5 @@
 import 'package:devhelper_grpc/src/refelction_client.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:devhelper_grpc/src/dynamic_message.dart';
 import 'dart:async';
 import 'package:grpc/grpc.dart';
@@ -50,5 +50,5 @@ void main() {
     expect(outputDP.field.first.name, 'content');
     expect(res.get('content'), 'hallo');
     expect(res.toProto3Json(), {'content': 'hallo'});
-  });
+  }, skip: 'need server with reflection');
 }

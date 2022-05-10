@@ -1,4 +1,4 @@
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:devhelper_grpc/proto/hello.pbgrpc.dart';
 import 'package:devhelper_grpc/proto/hello.pb.dart' as pb;
 import 'package:grpc/grpc.dart';

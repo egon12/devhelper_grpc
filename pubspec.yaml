@@ -37,6 +37,7 @@ dependencies:
 
   grpc: any
   protoc_plugin: any
+  get: any
 
 dev_dependencies:
   flutter_test:
@@ -49,7 +50,6 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^1.0.0
 
-  # test: any
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -9,11 +9,25 @@ class CallList extends GetView<CallListController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Call List')),
+      //appBar: SliverAppBar(title: const Text('Call List')),
       body: controller.rx.obx(
-        (state) => ListView.builder(
-          itemBuilder: (context, index) => CallViewItem(data: state?[index]),
-          itemCount: state?.length ?? 0,
+        (state) => CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              expandedHeight: 160.0,
+              floating: true,
+              flexibleSpace: FlexibleSpaceBar(
+                title: TextFormField(),
+                background: const FlutterLogo(),
+              ),
+            ),
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => CallViewItem(data: state?[index]),
+                childCount: state?.length ?? 0,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -21,13 +35,14 @@ class CallList extends GetView<CallListController> {
 }
 
 class CallViewItem extends StatelessWidget {
-  CallViewObject? data;
+  final CallViewObject? data;
 
-  CallViewItem({Key? key, required this.data}) : super(key: key);
+  const CallViewItem({Key? key, required this.data}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    var d = data;
+    final d = data;
+
     if (d == null) {
       return const ListTile(
         title: Text("empty"),
@@ -48,12 +63,28 @@ class CallViewItem extends StatelessWidget {
 class CallListController extends GetxController {
   var rx = List<CallViewObject>.empty().reactive;
 
+  var server = TextEditingController(text: "Hello");
+
   @override
   void onInit() {
     super.onInit();
     var calls = Future.value([
       CallViewObject(
-          package: "pkg", service: "Service", method: "Get", request: "{}"),
+          package: "pkg", service: "Service", method: "Get1", request: "{1}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get2", request: "{2}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get3", request: "{3}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get4", request: "{}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get4", request: "{}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get4", request: "{}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get4", request: "{}"),
+      CallViewObject(
+          package: "pkg", service: "Service", method: "Get4", request: "{}"),
       CallViewObject(
           package: "pkg",
           service: "Service",

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
 import '../usecase/call.dart';
 
@@ -11,15 +12,19 @@ class CallList extends GetView<CallListController> {
   Widget build(BuildContext context) {
     return Scaffold(
       //appBar: SliverAppBar(title: const Text('Call List')),
-      bottomNavigationBar: ConvexAppBar(
-    items: const [
-      TabItem(icon: Icons.settings, title: 'Setting'),
-      TabItem(icon: Icons.add, title: 'Add'),
-      TabItem(icon: Icons.menu_open, title: 'Run All'),
-    ],
-    initialActiveIndex: 1,//optional, default as 0
-    onTap: (int i) => print('click index=$i'),
-  ),
+      bottomNavigationBar: CurvedNavigationBar(
+        color: Colors.black,
+        backgroundColor: Colors.grey,
+        buttonBackgroundColor: Colors.blueGrey,
+        items: const [
+          Icon(Icons.settings, size: 30),
+          Icon(Icons.add, size: 30),
+          Icon(Icons.menu_open, size: 30),
+        ],
+        index: 1, //optional, default as 0
+        letIndexChange: (_) => false,
+        onTap: (int i) => print('click index=$i'),
+      ),
       body: controller.rx.obx(
         (state) => CustomScrollView(
           slivers: [

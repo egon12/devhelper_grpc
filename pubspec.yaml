@@ -38,6 +38,8 @@ dependencies:
   grpc: any
   protoc_plugin: any
   get: any
+  convex_bottom_bar: 3.0.0-nullsafety.0 
+
 
 dev_dependencies:
   flutter_test:
@@ -63,8 +65,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+     - images/app_logo_512.png
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 
 import '../usecase/call.dart';
 
@@ -10,14 +11,36 @@ class CallList extends GetView<CallListController> {
   Widget build(BuildContext context) {
     return Scaffold(
       //appBar: SliverAppBar(title: const Text('Call List')),
+      bottomNavigationBar: ConvexAppBar(
+    items: const [
+      TabItem(icon: Icons.settings, title: 'Setting'),
+      TabItem(icon: Icons.add, title: 'Add'),
+      TabItem(icon: Icons.menu_open, title: 'Run All'),
+    ],
+    initialActiveIndex: 1,//optional, default as 0
+    onTap: (int i) => print('click index=$i'),
+  ),
       body: controller.rx.obx(
         (state) => CustomScrollView(
           slivers: [
             SliverAppBar(
               expandedHeight: 160.0,
               floating: true,
+              snap: true,
+              pinned: true,
+              leading: Image.asset("images/app_logo_512.png"),
+              actions: [
+                PopupMenuButton(
+                    itemBuilder: (context) => [
+                          const PopupMenuItem(child: Text("Change URL")),
+                          const PopupMenuItem(child: Text("Use Proto")),
+                        ])
+              ],
               flexibleSpace: FlexibleSpaceBar(
-                title: TextFormField(),
+                title: Text(
+                  controller.title,
+                  maxLines: 1,
+                ),
                 background: const FlutterLogo(),
               ),
             ),
@@ -63,6 +86,8 @@ class CallViewItem extends StatelessWidget {
 class CallListController extends GetxController {
   var rx = List<CallViewObject>.empty().reactive;
 
+  var title = "".obs();
+
   var server = TextEditingController(text: "Hello");
 
   @override
@@ -92,6 +117,7 @@ class CallListController extends GetxController {
           request: '{"key":"mykey", "value": "myvalue"}'),
     ]);
     rx.append(() => () => calls);
+    title = "myserver.service.aws-main-ap-souteast-1.consul:50051";
   }
   //var rx = List<String>.from().reactive;
 }

@@ -4,6 +4,7 @@ import 'package:protobuf/protobuf.dart';
 import '../proto/descriptor.pb.dart';
 
 class DynamicMessage extends GeneratedMessage {
+  @override
   BuilderInfo info_;
 
   Map<String, int> fieldTag;
@@ -13,9 +14,11 @@ class DynamicMessage extends GeneratedMessage {
   DynamicMessage(
       {required this.info_, required this.fieldTag, required this.fieldType});
 
+  @override
   DynamicMessage createEmptyInstance() =>
       DynamicMessage(info_: info_, fieldTag: fieldTag, fieldType: fieldType);
 
+  @override
   DynamicMessage clone() =>
       DynamicMessage(info_: info_, fieldTag: fieldTag, fieldType: fieldType);
 

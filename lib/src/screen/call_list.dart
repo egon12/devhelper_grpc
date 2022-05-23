@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
 import '../usecase/call.dart';
@@ -14,7 +13,7 @@ class CallList extends GetView<CallListController> {
       //appBar: SliverAppBar(title: const Text('Call List')),
       bottomNavigationBar: CurvedNavigationBar(
         color: Colors.black,
-        backgroundColor: Colors.grey,
+        backgroundColor: const Color(0x00000000),
         buttonBackgroundColor: Colors.blueGrey,
         items: const [
           Icon(Icons.settings, size: 30),
@@ -29,6 +28,7 @@ class CallList extends GetView<CallListController> {
         (state) => CustomScrollView(
           slivers: [
             SliverAppBar(
+              backgroundColor: const Color(0xff275379),
               expandedHeight: 160.0,
               floating: true,
               snap: true,
@@ -82,7 +82,7 @@ class CallViewItem extends StatelessWidget {
         title: Text(d.package + "." + d.service + "/" + d.method),
         subtitle: Text(d.request),
         trailing: IconButton(
-          icon: const Icon(Icons.send_outlined),
+          icon: const Icon(Icons.send),
           onPressed: () {},
         ));
   }

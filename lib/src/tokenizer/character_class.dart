@@ -21,6 +21,7 @@ class Whitespace implements CharacterClass {
 	static final _instance = Whitespace._privateConstructor();
 	factory Whitespace() => _instance;
 
+	@override
 	bool inClass(String c) {
 		return (c == ' ' || c == '\n' || c == '\t' || c == '\r' ||
 			c == '\v' || c == '\f');
@@ -32,6 +33,7 @@ class WhitespaceNoNewline implements CharacterClass {
 	static final _instance = WhitespaceNoNewline._privateConstructor();
 	factory WhitespaceNoNewline() => _instance;
 
+	@override
 	bool inClass(String c) {
 		return c == ' ' || c == '\t' || c == '\r' || c == '\v' || c == '\f';
 	}
@@ -42,6 +44,7 @@ class Unprintable implements CharacterClass {
 	static final _instance = Unprintable._privateConstructor();
 	factory Unprintable() => _instance;
 
+	@override
 	bool inClass(String c) {
 		const space = 32; // for ' '
 		var cc = c.codeUnitAt(0);
@@ -54,6 +57,7 @@ class Digit implements CharacterClass {
 	static final _instance = Digit._privateConstructor();
 	factory Digit() => _instance;
 
+	@override
 	bool inClass(String c) {
 		var cc = c.codeUnitAt(0);
 		return n0 <= cc && cc <= n9;
@@ -64,6 +68,7 @@ class OctalDigit implements CharacterClass {
 	static final _instance = OctalDigit._privateConstructor();
 	factory OctalDigit() => _instance;
 
+	@override
 	bool inClass(String c) {
 		var cc = c.codeUnitAt(0);
 		return n0 <= cc && cc <= n7;
@@ -74,6 +79,7 @@ class HexDigit implements CharacterClass {
 	static final _instance = HexDigit._privateConstructor();
 	factory HexDigit() => _instance;
 
+	@override
 	bool inClass(String c) {
 		var cc = c.codeUnitAt(0);
 		return (n0 <= cc && cc <= n9) || 
@@ -88,6 +94,7 @@ class Letter implements CharacterClass {
 	static final _instance = Letter._privateConstructor();
 	factory Letter() => _instance;
 
+	@override
 	bool inClass(String c) {
 		var cc = c.codeUnitAt(0);
 		return (na <= cc && cc <= nz) || 
@@ -101,6 +108,7 @@ class Alphanumeric implements CharacterClass {
 	static final _instance = Alphanumeric._privateConstructor();
 	factory Alphanumeric() => _instance;
 
+	@override
 	bool inClass(String c) {
 		var cc = c.codeUnitAt(0);
 		return (na <= cc && cc <= nz) || 
@@ -115,9 +123,10 @@ class Escape implements CharacterClass {
 	static final _instance = Escape._privateConstructor();
 	factory Escape() => _instance;
 
+	@override
 	bool inClass(String c) {
 		return c == 'a' || c == 'b' || c == 'f' || c == 'n' ||
 				c == 'r' || c == 't' || c == 'v' || c == '\\' ||
-				c == '?' || c == '\'' || c == '\"';
+				c == '?' || c == '\'' || c == '"';
 	}
 }

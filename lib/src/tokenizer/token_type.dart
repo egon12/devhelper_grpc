@@ -44,5 +44,5 @@ enum TokenType {
 	// produced if report_whitespace() is true and
 	// report_newlines() is true.  It is not reported for
 	// newlines in comments or strings.
-	TYPE_NEWLINE,
-};
+	TYPE_NEWLINE
+}

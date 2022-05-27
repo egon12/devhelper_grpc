@@ -9,40 +9,42 @@ class Tokenizer {
 	final String input;
 	final int _size;
 
+	final bool _allowMultilineStrings = true;
+	final bool _allowFAfterFloat = false;
+	final bool _requireSpaceAfterNumber = true;
+	
+
 	String _currentChar;
 	int _pos;
 	int _line;
 	int _column;
 	bool _readError;
 
-	String _recordTarget;
+	StringSink? _recordTarget;
 	int _recordStart;
-	bool _onRecord;
 
 	Token? _current;
 	//Token? _previous;
 
 	Tokenizer({required this.input}): 
 		_pos = 0, _line = 0, _column = 0, _currentChar = input[0], _size = input.length, _readError = false,
-		_recordTarget = '', _onRecord = false, _recordStart = 0;
-
-
+		_recordTarget = null,  _recordStart = 0;
 
 
 	void nextChar() {
 		// Update our line and column counters based on the character being
 		// consumed.
 		if (_currentChar == '\n') {
-			++_line;
+			_line += 1;
 			_column = 0;
 		} else if (_currentChar == '\t') {
 			_column += kTabWidth - _column % kTabWidth;
 		} else {
-			++_column;
+			_column += 1;
 		}
 
 		// Advance to the next character.
-		++_pos;
+		_pos += 1;
 		if (_pos < _size) {
 			_currentChar = input[_pos];
 		} else {
@@ -52,18 +54,18 @@ class Tokenizer {
 
 	void refresh() {
 		if (_readError) {
-			_currentChar = '\0';
+			_currentChar = '\x00';
 			return;
 		}
 
 		// If we're in a token, append the rest of the buffer to it.
-		if (_onRecord && _recordStart < _size) {
-			_recordTarget += input.substring(_recordStart);
+		if (_recordTarget != null && _recordStart < _size) {
+			_recordTarget!.write(input.substring(_recordStart));
 			_recordStart = 0;
 		}
 
-		_pos = 0;
-		_currentChar = input[_pos];
+		//_pos = 0;
+		//_currentChar = input[_pos];
 		/*
 		   const void* data = NULL;
 		   buffer_ = NULL;
@@ -85,8 +87,7 @@ class Tokenizer {
 	}
 
 
-	void recordTo(String target) {
-		_onRecord = true;
+	void recordTo(StringSink? target) {
 		_recordTarget = target;
 		_recordStart = _pos;
 	}
@@ -98,16 +99,15 @@ class Tokenizer {
 		//   be helpful by detecting the NULL pointer, even though there's nothing
 		//   wrong with reading zero bytes from NULL.
 		if (_pos != _recordStart) {
-			_recordTarget += input.substring(_recordStart, _pos);
+			_recordTarget?.write(input.substring(_recordStart, _pos));
 		}
-		_onRecord = false;
-		_recordTarget = '';
+		_recordTarget = null;
 		_recordStart = -1;
 	}
 
 	void startToken() {
 		_current = Token( line: _line, colStart: _column);
-		recordTo(_current?.text ?? '');
+		recordTo(_current);
 	}
 
 	void endToken() {
@@ -149,7 +149,7 @@ class Tokenizer {
 
 	void consumeOneOrMore(CharacterClass c, String error) {
 		if (!c.inClass(_currentChar)) {
-			//AddError(error);
+			addError(error);
 		} else {
 			do {
 				nextChar();
@@ -169,7 +169,7 @@ class Tokenizer {
 					return;
 
 				case '\n': {
-					if (!allow_multiline_strings_) {
+					if (!_allowMultilineStrings) {
 						addError("String literals cannot cross line boundaries.");
 						return;
 					}
@@ -226,172 +226,74 @@ class Tokenizer {
 		}
 	}
 
-	TokenType consumeNumber(bool started_with_zero, bool started_with_dot) {
+	TokenType consumeNumber(bool startedWithZero, bool startedWithDot) {
 		bool is_float = false;
 
-		if (started_with_zero && (tryConsume('x') || tryConsume('X'))) {
+		if (startedWithZero && (tryConsume('x') || tryConsume('X'))) {
 			// A hex number (started with "0x").
-			consumeOneOrMore<HexDigit>("\"0x\" must be followed by hex digits.");
-
-		} else if (started_with_zero && LookingAt<Digit>()) {
+			consumeOneOrMore(HexDigit(), "\"0x\" must be followed by hex digits.");
+		} else if (startedWithZero && lookingAt(Digit())) {
 			// An octal number (had a leading zero).
 			consumeZeroOrMore(OctalDigit());
-			if (lookingAt<Digit>()) {
+			if (lookingAt(Digit())) {
 				addError("Numbers starting with leading zero must be in octal.");
-				consumeZeroOrMore<Digit>();
+				consumeZeroOrMore(Digit());
 			}
 
 		} else {
 			// A decimal number.
-			if (started_with_dot) {
+			if (startedWithDot) {
 				is_float = true;
-				ConsumeZeroOrMore<Digit>();
+				consumeZeroOrMore(Digit());
 			} else {
-				ConsumeZeroOrMore<Digit>();
+				consumeZeroOrMore(Digit());
 
-				if (TryConsume('.')) {
+				if (tryConsume('.')) {
 					is_float = true;
-					ConsumeZeroOrMore<Digit>();
+					consumeZeroOrMore(Digit());
 				}
 			}
 
-			if (TryConsume('e') || TryConsume('E')) {
+			if (tryConsume('e') || tryConsume('E')) {
 				is_float = true;
-				TryConsume('-') || TryConsume('+');
-				ConsumeOneOrMore<Digit>("\"e\" must be followed by exponent.");
+				tryConsume('-') || tryConsume('+');
+				consumeOneOrMore(Digit(), "\"e\" must be followed by exponent.");
 			}
 
-			if (allow_f_after_float_ && (TryConsume('f') || TryConsume('F'))) {
+			if (_allowFAfterFloat && (tryConsume('f') || tryConsume('F'))) {
 				is_float = true;
 			}
 		}
 
-		if (LookingAt<Letter>() && require_space_after_number_) {
-			AddError("Need space between number and identifier.");
-		} else if (current_char_ == '.') {
+		if (lookingAt(Letter()) && _requireSpaceAfterNumber) {
+			addError("Need space between number and identifier.");
+		} else if (_currentChar == '.') {
 			if (is_float) {
-				AddError(
+				addError(
 						"Already saw decimal point or exponent; can't have another one.");
 			} else {
-				AddError("Hex and octal numbers must be integers.");
+				addError("Hex and octal numbers must be integers.");
 			}
 		}
 
-		return is_float ? TYPE_FLOAT : TYPE_INTEGER;
+		return is_float ? TokenType.TYPE_FLOAT : TokenType.TYPE_INTEGER;
 	}
 
-	void Tokenizer::ConsumeLineComment(std::string* content) {
-		if (content != NULL) RecordTo(content);
+	void consumeLineComment(StringSink? content) {
+		if (content != null) recordTo(content);
 
-		while (current_char_ != '\0' && current_char_ != '\n') {
-			NextChar();
+		while (_currentChar != '\x00' && _currentChar != '\n') {
+			nextChar();
 		}
-		TryConsume('\n');
+		tryConsume('\n');
 
-		if (content != NULL) StopRecording();
-	}
-
-	void Tokenizer::ConsumeBlockComment(std::string* content) {
-		int start_line = line_;
-		int start_column = column_ - 2;
-
-		if (content != NULL) RecordTo(content);
-
-		while (true) {
-			while (current_char_ != '\0' && current_char_ != '*' &&
-					current_char_ != '/' && current_char_ != '\n') {
-				NextChar();
-			}
-
-			if (TryConsume('\n')) {
-				if (content != NULL) StopRecording();
-
-				// Consume leading whitespace and asterisk;
-				ConsumeZeroOrMore<WhitespaceNoNewline>();
-				if (TryConsume('*')) {
-					if (TryConsume('/')) {
-						// End of comment.
-						break;
-					}
-				}
-
-				if (content != NULL) RecordTo(content);
-			} else if (TryConsume('*') && TryConsume('/')) {
-				// End of comment.
-				if (content != NULL) {
-					StopRecording();
-					// Strip trailing "*/".
-					content->erase(content->size() - 2);
-				}
-				break;
-			} else if (TryConsume('/') && current_char_ == '*') {
-				// Note:  We didn't consume the '*' because if there is a '/' after it
-				//   we want to interpret that as the end of the comment.
-				AddError(
-						"\"/*\" inside block comment.  Block comments cannot be nested.");
-			} else if (current_char_ == '\0') {
-				AddError("End-of-file inside block comment.");
-				error_collector_->AddError(start_line, start_column,
-						"  Comment started here.");
-				if (content != NULL) StopRecording();
-				break;
-			}
-		}
-	}
-
-	Tokenizer::NextCommentStatus Tokenizer::TryConsumeCommentStart() {
-		if (comment_style_ == CPP_COMMENT_STYLE && TryConsume('/')) {
-			if (TryConsume('/')) {
-				return LINE_COMMENT;
-			} else if (TryConsume('*')) {
-				return BLOCK_COMMENT;
-			} else {
-				// Oops, it was just a slash.  Return it.
-				current_.type = TYPE_SYMBOL;
-				current_.text = "/";
-				current_.line = line_;
-				current_.column = column_ - 1;
-				current_.end_column = column_;
-				return SLASH_NOT_COMMENT;
-			}
-		} else if (comment_style_ == SH_COMMENT_STYLE && TryConsume('#')) {
-			return LINE_COMMENT;
-		} else {
-			return NO_COMMENT;
-		}
-	}
-
-	bool Tokenizer::TryConsumeWhitespace() {
-		if (report_newlines_) {
-			if (TryConsumeOne<WhitespaceNoNewline>()) {
-				ConsumeZeroOrMore<WhitespaceNoNewline>();
-				current_.type = TYPE_WHITESPACE;
-				return true;
-			}
-			return false;
-		}
-		if (TryConsumeOne<Whitespace>()) {
-			ConsumeZeroOrMore<Whitespace>();
-			current_.type = TYPE_WHITESPACE;
-			return report_whitespace_;
-		}
-		return false;
-	}
-
-	bool Tokenizer::TryConsumeNewline() {
-		if (!report_whitespace_ || !report_newlines_) {
-			return false;
-		}
-		if (TryConsume('\n')) {
-			current_.type = TYPE_NEWLINE;
-			return true;
-		}
-		return false;
+		if (content != null) stopRecording();
 	}
 
 	void addError(String error) {
 		print(error);
 	}
+
 
 
 }

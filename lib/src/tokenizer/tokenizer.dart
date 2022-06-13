@@ -48,6 +48,7 @@ class Tokenizer {
 		if (_pos < _size) {
 			_currentChar = input[_pos];
 		} else {
+			_currentChar = '\x00'; 
 			refresh();
 		}
 	}

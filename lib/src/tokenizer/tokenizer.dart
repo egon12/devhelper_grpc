@@ -4,15 +4,18 @@ import './token_type.dart';
 
 const kTabWidth = 8;
 
-class Tokenizer {
 
+class Tokenizer {
 	final String input;
 	final int _size;
 
 	final bool _allowMultilineStrings = true;
 	final bool _allowFAfterFloat = false;
 	final bool _requireSpaceAfterNumber = true;
-	
+
+	final ErrorCollector _errorCollector = ErrorCollector();
+
+	final CommentStyle _commentStyle = CommentStyle.cpp;
 
 	String _currentChar;
 	int _pos;
@@ -24,12 +27,15 @@ class Tokenizer {
 	int _recordStart;
 
 	Token? _current;
-	//Token? _previous;
+	Token? _previous;
 
 	Tokenizer({required this.input}): 
 		_pos = 0, _line = 0, _column = 0, _currentChar = input[0], _size = input.length, _readError = false,
 		_recordTarget = null,  _recordStart = 0;
 
+
+	Token? current() { return _current; }
+	Token? previous() { return _previous; }
 
 	void nextChar() {
 		// Update our line and column counters based on the character being
@@ -291,10 +297,256 @@ class Tokenizer {
 		if (content != null) stopRecording();
 	}
 
+	void consumeBlockComment(StringSink? content) {
+		int startLine = _line;
+		int startColumn = _column - 2;
+
+		if (content != null) recordTo(content);
+
+		while (true) {
+			while (_currentChar != '\x00' && _currentChar != '*' &&
+					_currentChar != '/' && _currentChar != '\n') {
+				nextChar();
+			}
+
+			if (tryConsume('\n')) {
+				if (content != null) stopRecording();
+
+				// Consume leading whitespace and asterisk;
+				consumeZeroOrMore(WhitespaceNoNewline());
+				if (tryConsume('*')) {
+					if (tryConsume('/')) {
+						// End of comment.
+						break;
+					}
+				}
+
+				if (content != null) recordTo(content);
+			} else if (tryConsume('*') && tryConsume('/')) {
+				// End of comment.
+				if (content != null) {
+					stopRecording();
+					// Strip trailing "*/".
+					// TODO is it possible to delete from StringSink
+					//content->erase(content->size() - 2);
+				}
+				break;
+			} else if (tryConsume('/') && _currentChar == '*') {
+				// Note:  We didn't consume the '*' because if there is a '/' after it
+				//   we want to interpret that as the end of the comment.
+				addError(
+						"\"/*\" inside block comment.  Block comments cannot be nested.");
+			} else if (_currentChar == '\x00') {
+				addError("End-of-file inside block comment.");
+				_errorCollector.addError(startLine, startColumn,
+						"  Comment started here.");
+				if (content != null) stopRecording();
+				break;
+			}
+		}
+	}
+
+	// If we're at the start of a new comment, consume it and return what kind
+	// of comment it is.
+	NextCommentStatus tryConsumeCommentStart() {
+		if (_commentStyle == CommentStyle.cpp && tryConsume('/')) {
+			if (tryConsume('/')) {
+				return NextCommentStatus.lineComment;
+			} else if (tryConsume('*')) {
+				return NextCommentStatus.blockComment;
+			} else {
+				// Oops, it was just a slash.  Return it.
+				_current?.type = TokenType.TYPE_SYMBOL;
+				_current?.write("/");
+				_current?.line = _line;
+				_current?.colStart = _column - 1;
+				_current?.colEnd = _column;
+				return NextCommentStatus.slashNotComment;
+			}
+		} else if (_commentStyle == CommentStyle.sh && tryConsume('#')) {
+			return NextCommentStatus.lineComment;
+		} else {
+			return NextCommentStatus.noComment;
+		}
+	}
+
+	bool tryConsumeWhitespace() {
+		if (tryConsumeOne(WhitespaceNoNewline())) {
+			consumeZeroOrMore(WhitespaceNoNewline());
+			_current?.type = TokenType.TYPE_WHITESPACE;
+			return true;
+		}
+		return false;
+	}
+	/*
+	   if (TryConsumeOne<Whitespace>()) {
+	   ConsumeZeroOrMore<Whitespace>();
+	   current_.type = TYPE_WHITESPACE;
+	   return report_whitespace_;
+	   }
+	   return false;
+	   */
+
+	bool tryConsumeNewline() {
+		if (tryConsume('\n')) {
+			_current?.type = TokenType.TYPE_NEWLINE;
+			return true;
+		}
+		return false;
+	}
+
+	bool next() {
+		_previous = _current;
+
+		while (!_readError) {
+			startToken();
+			bool reportToken = tryConsumeWhitespace() || tryConsumeNewline();
+			endToken();
+			if (reportToken) {
+				return true;
+			}
+
+			switch (tryConsumeCommentStart()) {
+				case NextCommentStatus.lineComment:
+					consumeLineComment(null);
+					continue;
+				case NextCommentStatus.blockComment:
+					consumeBlockComment(null);
+					continue;
+				case NextCommentStatus.slashNotComment:
+					return true;
+				case NextCommentStatus.noComment:
+					break;
+			}
+
+			// Check for EOF before continuing.
+			if (_readError) break;
+
+			if (lookingAt(Unprintable()) || _currentChar == '\x00') {
+				addError("Invalid control characters encountered in text.");
+				nextChar();
+				// Skip more unprintable characters, too.  But, remember that '\0' is
+				// also what current_char_ is set to after EOF / read error.  We have
+				// to be careful not to go into an infinite loop of trying to consume
+				// it, so make sure to check read_error_ explicitly before consuming
+				// '\0'.
+				while (tryConsumeOne(Unprintable()) ||
+						(!_readError && tryConsume('\x00'))) {
+					// Ignore.
+				}
+
+			} else {
+				// Reading some sort of token.
+				startToken();
+
+				if (tryConsumeOne(Letter())) {
+					consumeZeroOrMore(Alphanumeric());
+					_current?.type = TokenType.TYPE_IDENTIFIER;
+				} else if (tryConsume('0')) {
+					_current?.type = consumeNumber(true, false);
+				} else if (tryConsume('.')) {
+					// This could be the beginning of a floating-point number, or it could
+					// just be a '.' symbol.
+
+					if (tryConsumeOne(Digit())) {
+						// It's a floating-point number.
+						if (_previous?.type == TokenType.TYPE_IDENTIFIER &&
+								_current?.line == _previous?.line &&
+								_current?.colStart == _previous?.colEnd) {
+							// We don't accept syntax like "blah.123".
+							_errorCollector.addError(
+									_line, _column - 2,
+									"Need space between identifier and decimal point.");
+						}
+						_current?.type = consumeNumber(false, true);
+					} else {
+						_current?.type = TokenType.TYPE_SYMBOL;
+					}
+				} else if (tryConsumeOne(Digit())) {
+					_current?.type = consumeNumber(false, false);
+				} else if (tryConsume('"')) {
+					consumeString('"');
+					_current?.type = TokenType.TYPE_STRING;
+				} else if (tryConsume('\'')) {
+					consumeString('\'');
+					_current?.type = TokenType.TYPE_STRING;
+				} else {
+					// Check if the high order bit is set.
+					// TODO try to understand this if block of code
+					//if (_currentChar & 0x80) {
+					//  error_collector_->AddError(
+					//      line_, column_,
+					//      StringPrintf("Interpreting non ascii codepoint %d.",
+					//                      static_cast<unsigned char>(current_char_)));
+					//}
+					nextChar();
+					_current?.type = TokenType.TYPE_SYMBOL;
+				}
+
+				endToken();
+				return true;
+			}
+		}
+
+		// EOF
+		_current?.type = TokenType.TYPE_END;
+		// TODO try to find this clear type
+		//_current?.text.clear();
+		_current?.line = _line;
+		_current?.colStart = _column;
+		_current?.colEnd = _column;
+		return false;
+	}
+
 	void addError(String error) {
-		print(error);
+		_errorCollector.addError(_line, _column, error);
 	}
 
 
 
+}
+
+class TokenizeError {
+	final int line;
+	final int columnNumber;
+	final String message;
+
+	TokenizeError(this.line, this.columnNumber, this.message);
+}
+
+class ErrorCollector {
+	List<TokenizeError> errors = [];
+	List<TokenizeError> warnings = [];
+
+	void addError(int line, int columnNumber, String message) {
+		errors.add(TokenizeError(line, columnNumber, message));
+	}
+
+	void addWarning(int line, int columnNumber, String message) {
+		warnings.add(TokenizeError(line, columnNumber, message));
+	}
+}
+
+// Valid values for set_comment_style().
+enum CommentStyle {
+	// Line comments begin with "//", block comments are delimited by "/*" and
+	// "*/".
+	cpp,
+	// Line comments begin with "#".  No way to write block comments.
+	sh,
+}
+
+enum NextCommentStatus {
+	// Started a line comment.
+	lineComment,
+
+	// Started a block comment.
+	blockComment,
+
+	// Consumed a slash, then realized it wasn't a comment.  current_ has
+	// been filled in with a slash token.  The caller should return it.
+	slashNotComment,
+
+	// We do not appear to be starting a comment here.
+	noComment
 }

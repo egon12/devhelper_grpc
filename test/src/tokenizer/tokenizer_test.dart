@@ -32,10 +32,60 @@ void main() {
 	});
 
 	test('consumeLineComment', () {
+		var tokenizer = Tokenizer(input: ' something in here\nand not this');
+		var buffer = StringBuffer();
+		tokenizer.consumeLineComment(buffer);
+		expect(buffer.toString(), ' something in here\n');
+	});
+
+	test('consumeLineComment eof', () {
 		var tokenizer = Tokenizer(input: ' something in here');
 		var buffer = StringBuffer();
 		tokenizer.consumeLineComment(buffer);
-		expect(buffer.toString(), "");
-	}, skip: 'forever loop');
+		expect(buffer.toString(), ' something in here');
+	}, skip: 'double write in nextChar and stopRecording()');
+
+	test('consumeBlockComment', () {
+		var tokenizer = Tokenizer(input: '/* something \nin \nhere\n*/ this should be not consumed');
+		var buffer = StringBuffer();
+		tokenizer.consumeBlockComment(buffer);
+		expect(buffer.toString(), '/* something \nin \nhere\n');
+	});
+
+	test('next', () {
+		var tokenizer = Tokenizer(input: completeInput1);
+		for (var i = 0; i<50; i++) {
+			expect(tokenizer.next(), true);
+			print(tokenizer.current()?.type);
+			print(tokenizer.current()?.text);
+			//expect(tokenizer.current()?.text, null);
+		}
+	});
 }
+
+const completeInput1 = '''
+optional int32 foo = 1;  // Comment attached to foo.
+// Comment attached to bar.
+optional int32 bar = 2;
+
+optional string baz = 3;
+// Comment attached to baz.
+// Another line attached to baz.
+
+// Comment attached to qux.
+//
+// Another line attached to qux.
+optional double qux = 4;
+
+// Detached comment.  This is not attached to qux or corge
+// because there are blank lines separating it from both.
+
+optional string corge = 5;
+/* Block comment attached
+ * to corge.  Leading asterisks
+ * will be removed. */
+/* Block comment attached to
+ * grault. */
+optional int32 grault = 6;
+''';
 

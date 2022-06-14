@@ -10,28 +10,128 @@ class Parser {
 
 	DescriptorProto? currentMessage;
 
-	
-
-	void process() {
-		var it = tokens.iterator;
-
-		bool isMoreThanZero = it.moveNext();
-		if (!isMoreThanZero) {
-			// TODO empty file;
-			return;
+	FileDescriptorProto _file(String filename, Iterator<Token> it) {
+		// expect first to be start
+		if (it.current.type != TokenType.start) {
+			throw Exception("expect start type token");
 		}
 
+		var syntax = processSyntax(it);
+		var package = processPackage(it);
+
+		List<String> dependency = [];
+		List<EnumDescriptorProto> enumType = [];
+		List<DescriptorProto> messageType = [];
+		List<ServiceDescriptorProto> service = [];
+		FileOptions options = FileOptions();
 		while (it.moveNext()) {
-			var token = it.current;
-			if (token.type != TokenType.identifier) {
-				continue;
-			}
-
-			if (token.text == 'message') {
-				processMessage(it);
+			switch (it.current.text) {
+				case 'import':
+					dependency.add(processImport(it));
+					break;
+				case 'enum':
+					enumType.add(processEnum(it));
+					break;
+				case 'message':
+					messageType.add(processMessage(it));
+					break;
+				case 'service':
+					service.add(processService(it));
+					break;
+				case 'option':
+					processOption(it, options);
+					break;
+				default:
+					throw Exception('unexpected ${it.current.text}');
 			}
 		}
+
+		return FileDescriptorProto(
+				name: filename,
+				package: package,
+				dependency: dependency,
+				messageType: messageType,
+				enumType: enumType,
+				service: service,
+				extension: null,
+				options: options,
+				sourceCodeInfo: null,
+				publicDependency: null,
+				weakDependency: null,
+				syntax: syntax,
+		);
 	}
+
+	String processSyntax(Iterator<Token> it) {
+		if (!it.moveNext() || it.current.text != 'syntax') {
+			throw Exception("expect syntax at the top of file");
+		}
+
+		if (!it.moveNext() || it.current.text != '=') {
+			throw Exception("expect syntax = 'proto3' at the top of file");
+		}
+
+		if (!it.moveNext() || it.current.type != TokenType.identifier) {
+			throw Exception("expect syntax = 'proto3' at the top of file");
+		}
+		var syntax = it.current.text;
+
+		if (!it.moveNext() || it.current.text != ';') {
+			throw Exception("expect ; after syntax declaration");
+		}
+
+		return syntax;
+	}
+
+	String processPackage(Iterator<Token> it) {
+		if (!it.moveNext() || it.current.text != 'package') {
+			throw Exception("expect package at the top of file");
+		}
+
+		if (!it.moveNext()) {
+			throw Exception("expect package name after 'package'");
+		}
+
+		var package = it.current.text;
+		if (!it.moveNext() || it.current.text != ';') {
+			throw Exception("expect ; after package declaration");
+		}
+
+		return package;
+	}
+
+	String processImport(Iterator<Token> it) {
+		if (!it.moveNext()) {
+			throw Exception("expect import name after 'import'");
+		}
+
+		var import = it.current.text;
+		if (!it.moveNext() || it.current.text != ';') {
+			throw Exception("expect ; after import declaration");
+		}
+
+		return import;
+	}
+
+	EnumDescriptorProto processEnum(Iterator<Token> it) {
+		// TODO process this one
+		return EnumDescriptorProto();
+	}
+
+	DescriptorProto processMessage(Iterator<Token> it) {
+		if (!it.moveNext()) {
+			throw Exception("expect import name after 'import'");
+		}
+
+		var import = it.current.text;
+		if (!it.moveNext() || it.current.text != ';') {
+			throw Exception("expect ; after import declaration");
+		}
+
+		return import;
+
+	}
+	
 
 	void processMessage(Iterator<Token> it) {
 		currentMessage = DescriptorProto();

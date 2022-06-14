@@ -55,9 +55,13 @@ void main() {
 	test('next', () {
 		var tokenizer = Tokenizer(input: completeInput1);
 		for (var i = 0; i<50; i++) {
-			expect(tokenizer.next(), true);
-			print(tokenizer.current()?.type);
-			print(tokenizer.current()?.text);
+			bool n = tokenizer.next();
+			//expect(tokenizer.next(), true);
+			if (n) {
+				print(tokenizer.current());
+			} else {
+				break;
+			}
 			//expect(tokenizer.current()?.text, null);
 		}
 	});

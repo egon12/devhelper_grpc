@@ -23,6 +23,10 @@ class Tokenizer {
 	int _column;
 	bool _readError;
 
+	bool _reportWhitespace = false;
+	
+	bool _reportNewlines = true;
+
 	StringSink? _recordTarget;
 	int _recordStart;
 
@@ -283,7 +287,7 @@ class Tokenizer {
 			}
 		}
 
-		return is_float ? TokenType.TYPE_FLOAT : TokenType.TYPE_INTEGER;
+		return is_float ? TokenType.float : TokenType.integer;
 	}
 
 	void consumeLineComment(StringSink? content) {
@@ -356,7 +360,7 @@ class Tokenizer {
 				return NextCommentStatus.blockComment;
 			} else {
 				// Oops, it was just a slash.  Return it.
-				_current?.type = TokenType.TYPE_SYMBOL;
+				_current?.type = TokenType.symbol;
 				_current?.write("/");
 				_current?.line = _line;
 				_current?.colStart = _column - 1;
@@ -371,27 +375,32 @@ class Tokenizer {
 	}
 
 	bool tryConsumeWhitespace() {
-		if (tryConsumeOne(WhitespaceNoNewline())) {
-			consumeZeroOrMore(WhitespaceNoNewline());
-			_current?.type = TokenType.TYPE_WHITESPACE;
-			return true;
+		if (_reportNewlines) {
+			if (tryConsumeOne(WhitespaceNoNewline())) {
+				consumeZeroOrMore(WhitespaceNoNewline());
+				_current?.type = TokenType.whitespace;
+				return _reportWhitespace;
+			}
+			return false;
+		}
+		if (tryConsumeOne(Whitespace())) {
+			consumeZeroOrMore(Whitespace());
+			_current?.type = TokenType.whitespace;
+			return _reportWhitespace;
 		}
 		return false;
 	}
-	/*
-	   if (TryConsumeOne<Whitespace>()) {
-	   ConsumeZeroOrMore<Whitespace>();
-	   current_.type = TYPE_WHITESPACE;
-	   return report_whitespace_;
-	   }
-	   return false;
-	   */
 
 	bool tryConsumeNewline() {
-		if (tryConsume('\n')) {
-			_current?.type = TokenType.TYPE_NEWLINE;
+		//if (!_reportWhitespace || !_reportNewlines) {
+		//	return false;
+		//}
+
+		if (_reportNewlines && tryConsume('\n')) {
+			_current?.type = TokenType.newline;
 			return true;
 		}
+
 		return false;
 	}
 
@@ -403,6 +412,7 @@ class Tokenizer {
 			bool reportToken = tryConsumeWhitespace() || tryConsumeNewline();
 			endToken();
 			if (reportToken) {
+				print("reportWhitespaceToken: $reportToken"); 
 				return true;
 			}
 
@@ -441,7 +451,7 @@ class Tokenizer {
 
 				if (tryConsumeOne(Letter())) {
 					consumeZeroOrMore(Alphanumeric());
-					_current?.type = TokenType.TYPE_IDENTIFIER;
+					_current?.type = TokenType.identifier;
 				} else if (tryConsume('0')) {
 					_current?.type = consumeNumber(true, false);
 				} else if (tryConsume('.')) {
@@ -450,7 +460,7 @@ class Tokenizer {
 
 					if (tryConsumeOne(Digit())) {
 						// It's a floating-point number.
-						if (_previous?.type == TokenType.TYPE_IDENTIFIER &&
+						if (_previous?.type == TokenType.identifier &&
 								_current?.line == _previous?.line &&
 								_current?.colStart == _previous?.colEnd) {
 							// We don't accept syntax like "blah.123".
@@ -460,16 +470,16 @@ class Tokenizer {
 						}
 						_current?.type = consumeNumber(false, true);
 					} else {
-						_current?.type = TokenType.TYPE_SYMBOL;
+						_current?.type = TokenType.symbol;
 					}
 				} else if (tryConsumeOne(Digit())) {
 					_current?.type = consumeNumber(false, false);
 				} else if (tryConsume('"')) {
 					consumeString('"');
-					_current?.type = TokenType.TYPE_STRING;
+					_current?.type = TokenType.string;
 				} else if (tryConsume('\'')) {
 					consumeString('\'');
-					_current?.type = TokenType.TYPE_STRING;
+					_current?.type = TokenType.string;
 				} else {
 					// Check if the high order bit is set.
 					// TODO try to understand this if block of code
@@ -480,7 +490,7 @@ class Tokenizer {
 					//                      static_cast<unsigned char>(current_char_)));
 					//}
 					nextChar();
-					_current?.type = TokenType.TYPE_SYMBOL;
+					_current?.type = TokenType.symbol;
 				}
 
 				endToken();
@@ -489,7 +499,7 @@ class Tokenizer {
 		}
 
 		// EOF
-		_current?.type = TokenType.TYPE_END;
+		_current?.type = TokenType.end;
 		// TODO try to find this clear type
 		//_current?.text.clear();
 		_current?.line = _line;
@@ -501,9 +511,6 @@ class Tokenizer {
 	void addError(String error) {
 		_errorCollector.addError(_line, _column, error);
 	}
-
-
-
 }
 
 class TokenizeError {

@@ -3,13 +3,13 @@ import './token_type.dart';
 class Token implements StringSink {
 	final StringBuffer _buffer = StringBuffer();
 
-	late TokenType type= TokenType.TYPE_START;
+	late TokenType type= TokenType.start;
 	int line;
 	int colStart;
 	int colEnd;
 
 	Token({
-		this.type = TokenType.TYPE_START,
+		this.type = TokenType.start ,
 		this.line = 0,
 		this.colStart = 0,
 		this.colEnd = 0,
@@ -38,5 +38,10 @@ class Token implements StringSink {
 	@override
 	void writeln([Object? object = ""]) {
 		_buffer.writeln(object);
+	}
+
+	@override
+	String toString() {
+		return "Token: $type [$line:$colStart-$colEnd] $text";
 	}
 }

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:devhelper_grpc/src/tokenizer/tokenizer.dart';
+import 'package:devhelper_grpc/src/tokenizer/token.dart';
 import 'package:devhelper_grpc/src/tokenizer/character_class.dart';
 
 void main() {
@@ -64,6 +65,17 @@ void main() {
 			}
 			//expect(tokenizer.current()?.text, null);
 		}
+	}, skip: 'never finish');
+
+
+	test('complete', () {
+		var tokenizer = Tokenizer(input: completeInput2);
+		tokenizer.reportNewlines = false;
+		List<Token> tokens = [];
+		while(tokenizer.next()) {
+			tokens.add(tokenizer.current()!);
+		}
+		print(tokens);
 	});
 }
 
@@ -93,3 +105,18 @@ optional string corge = 5;
 optional int32 grault = 6;
 ''';
 
+
+const completeInput2 = '''
+/**
+  Some comment in the file
+*/
+syntax = "proto3";
+
+package org.mypackage.test;
+
+message Empty {}
+
+service Hello {
+	rpc hello(Empty) returns Empty;
+}
+''';

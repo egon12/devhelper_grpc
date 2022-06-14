@@ -23,9 +23,9 @@ class Tokenizer {
 	int _column;
 	bool _readError;
 
-	bool _reportWhitespace = false;
+	bool reportWhitespace = false;
 	
-	bool _reportNewlines = true;
+	bool reportNewlines = true;
 
 	StringSink? _recordTarget;
 	int _recordStart;
@@ -375,28 +375,28 @@ class Tokenizer {
 	}
 
 	bool tryConsumeWhitespace() {
-		if (_reportNewlines) {
+		if (reportNewlines) {
 			if (tryConsumeOne(WhitespaceNoNewline())) {
 				consumeZeroOrMore(WhitespaceNoNewline());
 				_current?.type = TokenType.whitespace;
-				return _reportWhitespace;
+				return reportWhitespace;
 			}
 			return false;
 		}
 		if (tryConsumeOne(Whitespace())) {
 			consumeZeroOrMore(Whitespace());
 			_current?.type = TokenType.whitespace;
-			return _reportWhitespace;
+			return reportWhitespace;
 		}
 		return false;
 	}
 
 	bool tryConsumeNewline() {
-		//if (!_reportWhitespace || !_reportNewlines) {
+		//if (!reportWhitespace || !reportNewlines) {
 		//	return false;
 		//}
 
-		if (_reportNewlines && tryConsume('\n')) {
+		if (reportNewlines && tryConsume('\n')) {
 			_current?.type = TokenType.newline;
 			return true;
 		}
@@ -412,7 +412,6 @@ class Tokenizer {
 			bool reportToken = tryConsumeWhitespace() || tryConsumeNewline();
 			endToken();
 			if (reportToken) {
-				print("reportWhitespaceToken: $reportToken"); 
 				return true;
 			}
 
@@ -510,6 +509,7 @@ class Tokenizer {
 
 	void addError(String error) {
 		_errorCollector.addError(_line, _column, error);
+		_readError = true;
 	}
 }
 

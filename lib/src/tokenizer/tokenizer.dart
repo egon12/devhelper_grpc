@@ -30,7 +30,7 @@ class Tokenizer {
 	StringSink? _recordTarget;
 	int _recordStart;
 
-	Token? _current;
+	Token _current = Token();
 	Token? _previous;
 
 	Tokenizer({required this.input}): 
@@ -123,7 +123,7 @@ class Tokenizer {
 
 	void endToken() {
 		stopRecording();
-		_current?.colEnd = _column;
+		_current.colEnd = _column;
 	}
 
 	// =================================
@@ -360,11 +360,11 @@ class Tokenizer {
 				return NextCommentStatus.blockComment;
 			} else {
 				// Oops, it was just a slash.  Return it.
-				_current?.type = TokenType.symbol;
-				_current?.write("/");
-				_current?.line = _line;
-				_current?.colStart = _column - 1;
-				_current?.colEnd = _column;
+				_current.type = TokenType.symbol;
+				_current.write("/");
+				_current.line = _line;
+				_current.colStart = _column - 1;
+				_current.colEnd = _column;
 				return NextCommentStatus.slashNotComment;
 			}
 		} else if (_commentStyle == CommentStyle.sh && tryConsume('#')) {
@@ -378,14 +378,14 @@ class Tokenizer {
 		if (reportNewlines) {
 			if (tryConsumeOne(WhitespaceNoNewline())) {
 				consumeZeroOrMore(WhitespaceNoNewline());
-				_current?.type = TokenType.whitespace;
+				_current.type = TokenType.whitespace;
 				return reportWhitespace;
 			}
 			return false;
 		}
 		if (tryConsumeOne(Whitespace())) {
 			consumeZeroOrMore(Whitespace());
-			_current?.type = TokenType.whitespace;
+			_current.type = TokenType.whitespace;
 			return reportWhitespace;
 		}
 		return false;
@@ -397,7 +397,7 @@ class Tokenizer {
 		//}
 
 		if (reportNewlines && tryConsume('\n')) {
-			_current?.type = TokenType.newline;
+			_current.type = TokenType.newline;
 			return true;
 		}
 
@@ -450,9 +450,9 @@ class Tokenizer {
 
 				if (tryConsumeOne(Letter())) {
 					consumeZeroOrMore(Alphanumeric());
-					_current?.type = TokenType.identifier;
+					_current.type = TokenType.identifier;
 				} else if (tryConsume('0')) {
-					_current?.type = consumeNumber(true, false);
+					_current.type = consumeNumber(true, false);
 				} else if (tryConsume('.')) {
 					// This could be the beginning of a floating-point number, or it could
 					// just be a '.' symbol.
@@ -460,25 +460,25 @@ class Tokenizer {
 					if (tryConsumeOne(Digit())) {
 						// It's a floating-point number.
 						if (_previous?.type == TokenType.identifier &&
-								_current?.line == _previous?.line &&
-								_current?.colStart == _previous?.colEnd) {
+								_current.line == _previous?.line &&
+								_current.colStart == _previous?.colEnd) {
 							// We don't accept syntax like "blah.123".
 							_errorCollector.addError(
 									_line, _column - 2,
 									"Need space between identifier and decimal point.");
 						}
-						_current?.type = consumeNumber(false, true);
+						_current.type = consumeNumber(false, true);
 					} else {
-						_current?.type = TokenType.symbol;
+						_current.type = TokenType.symbol;
 					}
 				} else if (tryConsumeOne(Digit())) {
-					_current?.type = consumeNumber(false, false);
+					_current.type = consumeNumber(false, false);
 				} else if (tryConsume('"')) {
 					consumeString('"');
-					_current?.type = TokenType.string;
+					_current.type = TokenType.string;
 				} else if (tryConsume('\'')) {
 					consumeString('\'');
-					_current?.type = TokenType.string;
+					_current.type = TokenType.string;
 				} else {
 					// Check if the high order bit is set.
 					// TODO try to understand this if block of code
@@ -489,7 +489,7 @@ class Tokenizer {
 					//                      static_cast<unsigned char>(current_char_)));
 					//}
 					nextChar();
-					_current?.type = TokenType.symbol;
+					_current.type = TokenType.symbol;
 				}
 
 				endToken();
@@ -498,12 +498,12 @@ class Tokenizer {
 		}
 
 		// EOF
-		_current?.type = TokenType.end;
+		_current.type = TokenType.end;
 		// TODO try to find this clear type
-		//_current?.text.clear();
-		_current?.line = _line;
-		_current?.colStart = _column;
-		_current?.colEnd = _column;
+		//_current.text.clear();
+		_current.line = _line;
+		_current.colStart = _column;
+		_current.colEnd = _column;
 		return false;
 	}
 

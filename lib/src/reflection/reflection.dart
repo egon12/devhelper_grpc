@@ -1,4 +1,3 @@
-
 import 'package:devhelper_grpc/proto/descriptor.pb.dart';
 import 'package:devhelper_grpc/proto/reflection.pbgrpc.dart';
 import 'package:grpc/grpc.dart';
@@ -6,7 +5,7 @@ import 'package:grpc/grpc.dart';
 class ReflectionClient {
   ServerReflectionClient client;
 
-  ReflectionClient(ClientChannel c): client = ServerReflectionClient(c);
+  ReflectionClient(ClientChannel c) : client = ServerReflectionClient(c);
 
   Future<List<String>> services() async {
     final req =

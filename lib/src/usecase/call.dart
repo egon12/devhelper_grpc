@@ -1,5 +1,5 @@
 import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
-import 'package:devhelper_grpc/src/refelction_client.dart';
+import 'package:devhelper_grpc/src/reflection/reflection.dart';
 
 class Call {
   String methodName;

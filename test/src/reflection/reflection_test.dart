@@ -1,11 +1,11 @@
-import 'package:devhelper_grpc/src/refelction_client.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
 import 'dart:async';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:grpc/grpc.dart';
+import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
+import 'package:devhelper_grpc/src/reflection/reflection.dart';
 
 void main() {
-  test('test reflect', () async {
+  test('ReflectionClientTest', () async {
     final c = ClientChannel(
       'localhost',
       port: 50051,
@@ -18,12 +18,14 @@ void main() {
     final services = await sc.services();
 
     expect(services, [
+      'grpc.health.v1.Health',
       'grpc.reflection.v1alpha.ServerReflection',
       'pkg.DynamicPage',
+      'pkg.MStream',
       'pkg.RechargeApp'
     ]);
 
-    final methods = await sc.methods(services.toList()[1]);
+    final methods = await sc.methods(services.toList()[2]);
 
     final method = methods[0];
 
@@ -37,7 +39,7 @@ void main() {
     dm.setString(1, "hallo");
 
     final cm = ClientMethod(
-      "/" + services[1] + "/" + method.name,
+      "/" + services[2] + "/" + method.name,
       (DynamicMessage dm) => dm.writeToBuffer(),
       (List<int> value) => odm.fromBuffer(value),
     );
@@ -50,5 +52,5 @@ void main() {
     expect(outputDP.field.first.name, 'content');
     expect(res.get('content'), 'hallo');
     expect(res.toProto3Json(), {'content': 'hallo'});
-  }, skip: 'need server with reflection');
+  });
 }

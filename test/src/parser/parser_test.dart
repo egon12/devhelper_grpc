@@ -23,8 +23,16 @@ void main() {
 		Iterator<Token> it = tokens.iterator;
 		var fdp = parser.file("hello.proto", it);
 
-		print(fdp.messageType);
-		print(fdp.service);
-		
+		expect(fdp.package, 'myhello');
+
+		expect(
+				fdp.messageType[1].writeToJson(),
+				'{"1":"Response","2":[{"1":"message","3":1,"5":9,"6":"string"},{"1":"count","3":2,"5":3,"6":"int64"}]}',
+		);
+
+		expect(
+				fdp.service[0].writeToJson(),
+				'{"1":"Hello","2":[{"1":"Hello","2":"Request","3":"Response","5":false,"6":false}],"3":{}}'
+		);
 	});
 }

@@ -2,7 +2,6 @@ import '../tokenizer/token.dart';
 import '../tokenizer/token_type.dart';
 import '../../proto/descriptor.pb.dart';
 
-
 class Parser {
 	List<Token> tokens = [];
 
@@ -90,6 +89,7 @@ class Parser {
 	}
 
 	String processPackage(Iterator<Token> it) {
+    // TODO process package with dot like org.mycompany.myapp.v1
 		if (!it.moveNext() || it.current.text != 'package') {
 			throw it.current.exception(filename, "expect package");
 		}
@@ -353,32 +353,6 @@ class Parser {
 		return opt;
 	}
 	
-
-	/*
-	void processMessage(Iterator<Token> it) {
-		currentMessage = DescriptorProto();
-
-		// move next to get name
-		it.moveNext();
-		var name = it.current.text;
-
-		// move next to get open curly bracket {
-		it.moveNext();
-
-		// TODO think should we process new line
-		processInnerMessage(it);
-	}
-
-	void processInnerMessage(Iterator<Token> it) {
-		var msg = currentMessage;
-		if (msg == null) {
-			return;
-		}
-		msg.field = [];
-		msg.field.add(processField(it));
-	}
-	I*/
-
 	FieldDescriptorProto processField(Iterator<Token> it) {
 		// how to token like this..
 		// the last three should be 

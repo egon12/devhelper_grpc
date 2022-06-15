@@ -8,11 +8,18 @@ class Parser {
 
 	FileDescriptorSet fds = FileDescriptorSet();
 
+	String filename = '';
+
 	FileDescriptorProto file(String filename, Iterator<Token> it) {
-		it.moveNext();
+		this.filename = filename;
+		
+		if (!it.moveNext()) {
+			throw Exception("cannot process empty tokens");
+		}
+		
 		// expect first to be start
 		if (it.current.type != TokenType.start) {
-			throw Exception("expect start type token");
+			throw it.current.exception(filename, "expect start token");
 		}
 
 		var syntax = processSyntax(it);
@@ -41,7 +48,7 @@ class Parser {
 					processOption(it, options);
 					break;
 				default:
-					throw Exception('unexpected ${it.current.text}');
+					throw it.current.exception(filename, "unexpected identifer");
 			}
 		}
 
@@ -63,20 +70,20 @@ class Parser {
 
 	String processSyntax(Iterator<Token> it) {
 		if (!it.moveNext() || it.current.text != 'syntax') {
-			throw Exception("expect syntax at the top of file");
+			throw it.current.exception(filename, "expect syntax at top of file");
 		}
 
 		if (!it.moveNext() || it.current.text != '=') {
-			throw Exception("expect symbol '=' after syntax at:" + it.current.toString());
+			throw it.current.exception(filename, "wrong syntax declaration");
 		}
 
 		if (!it.moveNext() || it.current.type != TokenType.string) {
-			throw Exception("expect string after = at:" + it.current.toString());
+			throw it.current.exception(filename, "wrong syntax declaration");
 		}
 		var syntax = it.current.text;
 
 		if (!it.moveNext() || it.current.text != ';') {
-			throw Exception("expect ; after syntax declaration");
+			throw it.current.exception(filename, "expect ';'");
 		}
 
 		return syntax;
@@ -84,16 +91,16 @@ class Parser {
 
 	String processPackage(Iterator<Token> it) {
 		if (!it.moveNext() || it.current.text != 'package') {
-			throw Exception("expect package at the top of file");
+			throw it.current.exception(filename, "expect package");
 		}
 
-		if (!it.moveNext()) {
-			throw Exception("expect package name after 'package'");
+		if (!it.moveNext() || it.current.type != TokenType.identifier) {
+			throw it.current.exception(filename, "expect package name");
 		}
 
 		var package = it.current.text;
 		if (!it.moveNext() || it.current.text != ';') {
-			throw Exception("expect ; after package declaration");
+			throw it.current.exception(filename, "expect ';'");
 		}
 
 		return package;
@@ -113,7 +120,7 @@ class Parser {
 	}
 
 	EnumDescriptorProto processEnum(Iterator<Token> it) {
-		// TODO process this one
+		// TODO processEnum
 		return EnumDescriptorProto();
 	}
 
@@ -141,10 +148,11 @@ class Parser {
 					enumType.add(processEnum(it));
 					break;
 				case 'oneof':
+					// TODO processOneof
 					//oneof.add(processOneof(it));
 					break;
 				case 'option':
-					// something else
+					// TODO processMessageOption
 					//processMessageOption(it, options);
 					break;
 				default:

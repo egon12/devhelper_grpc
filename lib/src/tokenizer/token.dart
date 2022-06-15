@@ -44,4 +44,13 @@ class Token implements StringSink {
 	String toString() {
 		return "Token: $type [$line:$colStart-$colEnd] $text";
 	}
+
+	String toErrorString(String cause) {
+		return "$line : $cause at $colStart-$colEnd ($text)";
+	}
+
+	Exception exception(String filename, String cause) {
+		var err = toErrorString(cause);
+		return Exception("$filename:$err");
+	}
 }

@@ -1,6 +1,6 @@
 import 'package:devhelper_grpc/src/refelction_client.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:devhelper_grpc/src/dynamic_message.dart';
+import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
 import 'dart:async';
 import 'package:grpc/grpc.dart';
 

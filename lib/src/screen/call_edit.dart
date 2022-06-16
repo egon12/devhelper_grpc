@@ -4,7 +4,9 @@ import 'package:devhelper_grpc/proto/descriptor.pb.dart';
 import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:sqflite/sqflite.dart';
 
+import '../repository/server.dart';
 import '../server/server.dart';
 
 class CallEdit extends GetView<CallEditController> {
@@ -223,6 +225,8 @@ class ServerEdit extends GetView<CallEditController> {
 }
 
 class CallEditController extends GetxController {
+  ServerRepo serverRepo = Get.find();
+
   var title = 'Add new Call'.obs;
 
   var addNewServerOptions = '___add_new___';
@@ -243,21 +247,24 @@ class CallEditController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    start();
+    _start();
   }
 
-  void start() {
-    servers.add(Server("192.168.178.235", 50051, false));
+  void _start() async {
+    var serversFromDB = await serverRepo.all();
+    servers.clear();
+    servers.addAll(serversFromDB);
   }
 
-  void addServer() {
+  void addServer() async {
     var newServer = Server(
       serverHost.value,
       int.parse(serverPort.value),
       serverUseTLS.value,
     );
 
-    servers.add(newServer);
+    await serverRepo.save(newServer);
+    _start();
 
     selectedServer.value = newServer.toString();
 
@@ -300,6 +307,8 @@ class CallEditController extends GetxController {
 class CallEditBinding extends Bindings {
   @override
   void dependencies() {
+    Database db = Get.find();
+    Get.lazyPut(() => ServerRepo(db: db));
     Get.lazyPut(() => CallEditController());
   }
 }

@@ -11,6 +11,14 @@ class Server {
   Server(this.host, this.port, [this.useTLS = false]);
 
   @override
+  bool operator ==(Object other) {
+    if (other is Server) {
+      return other.host == host && other.port == port && other.useTLS == useTLS;
+    }
+    return false;
+  }
+
+  @override
   String toString() {
     var suffix = port > 0 ? ':$port' : '';
     return host + suffix;

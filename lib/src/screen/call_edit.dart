@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:devhelper_grpc/proto/descriptor.pb.dart';
+import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -11,20 +15,34 @@ class CallEdit extends GetView<CallEditController> {
     return Scaffold(
       appBar: AppBar(title: Obx(() => Text(controller.title.string))),
       //bottomSheet: AddServerBottomSheet(),
-      body: Form(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text("Get Service from reflection from server:",
-                    style: Theme.of(context).textTheme.bodyMedium),
-              ),
-              const Padding(padding: vertPad, child: ServerDropdownList()),
-              const Padding(padding: vertPad, child: ServiceDropdownList()),
-              const Padding(padding: vertPad, child: MethodDropdownList()),
-            ],
+      body: SingleChildScrollView(
+        child: Form(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text("Get Service from reflection from server:",
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ),
+                const Padding(padding: vertPad, child: ServerDropdownList()),
+                const Padding(padding: vertPad, child: ServiceDropdownList()),
+                const Padding(padding: vertPad, child: MethodDropdownList()),
+                Padding(
+                  padding: vertPad,
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 100, // some bad hardcode
+                    style: const TextStyle(fontFamily: 'Monospace'),
+                    controller: controller.bodyCtrl,
+                    //focusNode: controller.textFocus,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -132,7 +150,7 @@ class MethodDropdownList extends GetView<CallEditController> {
         ),
         value: controller.selectedMethod.string,
         onChanged: (str) {
-          //controller.showMethodsFrom(str.toString());
+          controller.generateBodyFrom(str.toString());
         },
         items: [
           emptyItem,
@@ -259,10 +277,23 @@ class CallEditController extends GetxController {
     services.addAll(allServices);
   }
 
+  List<MethodDescriptorProto> allMethods = [];
   void showMethodsFrom(String serviceChoosen) async {
-    var allMethods = await server.reflection.methods(serviceChoosen);
+    allMethods = await server.reflection.methods(serviceChoosen);
     methods.clear();
     methods.addAll(allMethods.map((i) => i.name));
+  }
+
+  TextEditingController bodyCtrl = TextEditingController();
+  void generateBodyFrom(String methodName) async {
+    var method = allMethods.firstWhere((element) => element.name == methodName);
+    var inputType =
+        await server.reflection.message(method.inputType.substring(1));
+
+    // TODO set the package name
+    var dm = DynamicMessage.fromDescriptor(inputType, '');
+    var body = jsonEncode(dm.toProto3Json());
+    bodyCtrl.text = body;
   }
 }
 

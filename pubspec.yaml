@@ -37,7 +37,7 @@ dependencies:
 
   grpc: any
   protoc_plugin: any
-  get: any
+  get: ^4.6.5
   convex_bottom_bar: 3.0.0-nullsafety.0 
   curved_navigation_bar: ^1.0.3
 

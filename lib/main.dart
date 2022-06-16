@@ -1,3 +1,4 @@
+import 'package:devhelper_grpc/src/screen/call_edit.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'src/screen/call_list.dart';
@@ -20,6 +21,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
       ),
       home: const CallList(),
+      getPages: [
+        callEditGetPage,
+      ],
     );
   }
 }

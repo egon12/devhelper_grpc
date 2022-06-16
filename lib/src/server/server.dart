@@ -2,7 +2,6 @@ import 'package:devhelper_grpc/src/reflection/reflection.dart';
 import 'package:grpc/grpc.dart';
 
 class Server {
-
   String host;
 
   int port;
@@ -10,6 +9,12 @@ class Server {
   bool useTLS;
 
   Server(this.host, this.port, [this.useTLS = false]);
+
+  @override
+  String toString() {
+    var suffix = port > 0 ? ':$port' : '';
+    return host + suffix;
+  }
 
   ClientChannel? _channel;
 

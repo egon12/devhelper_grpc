@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
-import '../usecase/call.dart';
-
 class CallList extends GetView<CallListController> {
   const CallList({Key? key}) : super(key: key);
 
@@ -12,18 +10,21 @@ class CallList extends GetView<CallListController> {
     return Scaffold(
       //appBar: SliverAppBar(title: const Text('Call List')),
       bottomNavigationBar: CurvedNavigationBar(
-        color: Colors.black,
-        backgroundColor: const Color(0x00000000),
-        buttonBackgroundColor: Colors.blueGrey,
-        items: const [
-          Icon(Icons.settings, size: 30),
-          Icon(Icons.add, size: 30),
-          Icon(Icons.menu_open, size: 30),
-        ],
-        index: 1, //optional, default as 0
-        letIndexChange: (_) => false,
-        onTap: (int i) => print('click index=$i'),
-      ),
+          color: Colors.black,
+          backgroundColor: Colors.transparent,
+          buttonBackgroundColor: Colors.blueGrey,
+          items: const [
+            Icon(Icons.settings, size: 30),
+            Icon(Icons.add, size: 30),
+            Icon(Icons.menu_open, size: 30),
+          ],
+          index: 1, //optional, default as 0
+          letIndexChange: (_) => true,
+          onTap: (int i) {
+            if (i == 1) {
+              controller.newCall();
+            }
+          }),
       body: controller.rx.obx(
         (state) => CustomScrollView(
           slivers: [
@@ -125,6 +126,10 @@ class CallListController extends GetxController {
     title = "myserver.service.aws-main-ap-souteast-1.consul:50051";
   }
   //var rx = List<String>.from().reactive;
+
+  void newCall() async {
+    await Get.toNamed("/call/edit");
+  }
 }
 
 class CallViewObject {

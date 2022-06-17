@@ -55,20 +55,6 @@ void main() {
     expect(buffer.toString(), '/* something \nin \nhere\n');
   });
 
-  test('next', () {
-    var tokenizer = Tokenizer(input: completeInput1);
-    for (var i = 0; i < 50; i++) {
-      bool n = tokenizer.next();
-      //expect(tokenizer.next(), true);
-      if (n) {
-        print(tokenizer.current());
-      } else {
-        break;
-      }
-      //expect(tokenizer.current()?.text, null);
-    }
-  }, skip: 'never finish');
-
   test('complete', () {
     var tokenizer = Tokenizer(input: completeInput2);
     tokenizer.reportNewlines = false;

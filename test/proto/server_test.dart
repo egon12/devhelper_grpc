@@ -13,7 +13,8 @@ void main() {
 }
 
 class HelloImpl extends HelloServiceBase {
-	Future<pb.Response> hello(ServiceCall call, Request req) async {
+	@override
+  Future<pb.Response> hello(ServiceCall call, Request req) async {
 		return pb.Response(
 				message: "hello " + req.name,
 		);

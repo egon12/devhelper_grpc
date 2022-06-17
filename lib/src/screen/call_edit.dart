@@ -39,7 +39,7 @@ class CallEdit extends GetView<CallEditController> {
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                     ),
-                    maxLines: 100, // some bad hardcode
+                    maxLines: 100, // TODO set max height instead maxLines 
                     style: const TextStyle(fontFamily: 'Monospace'),
                     controller: controller.bodyCtrl,
                     //focusNode: controller.textFocus,

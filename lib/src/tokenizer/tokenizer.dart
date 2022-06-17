@@ -4,7 +4,7 @@ import './token_type.dart';
 
 const kTabWidth = 8;
 
-
+// TODO implement Iterator<Token>
 class Tokenizer {
 	final String input;
 	final int _size;

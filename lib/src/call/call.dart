@@ -41,11 +41,11 @@ class CallPersistent {
   }
 
   factory CallPersistent.fromMap(Map<String, dynamic> m) {
-    var id = m['name'] as String;
+    var id = m['id'] as String;
     var name = m['name'] as String;
     var host = m['host'] as String;
     var port = m['port'] as int;
-    var pkg = m['port'] as String;
+    var pkg = m['pkg'] as String;
     var service = m['service'] as String;
     var method = m['method'] as String;
     var reqProto = DescriptorProto.fromBuffer(m['reqProto'] as List<int>);

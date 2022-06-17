@@ -8,5 +8,5 @@ void main() {
 
     var services = await r.services();
     expect(services[0], 'grpc.health.v1.Health');
-  });
+  }, skip: 'need grpc server');
 }

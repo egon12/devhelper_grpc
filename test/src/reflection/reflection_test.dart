@@ -52,5 +52,5 @@ void main() {
     expect(outputDP.field.first.name, 'content');
     expect(res.get('content'), 'hallo');
     expect(res.toProto3Json(), {'content': 'hallo'});
-  });
+  }, skip: 'need grpc server');
 }

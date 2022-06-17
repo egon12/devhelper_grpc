@@ -25,16 +25,16 @@ class CallRepo {
 
   static const createQuery = '''
   CREATE TABLE $_tableName (
-      id TEXT PRIMARY KEY
-      name TEXT NOT NULL
-      host TEXT NOT NULL
-      port INT NOT NULL
-      pkg TEXT NOT NULL
-      service TEXT NOT NULL
-      method TEXT NOT NULL
-      reqProto BLOB NOT NULL
-      resProto BLOB NOT NULL
-      req TEXT NOT NULL
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      host TEXT NOT NULL,
+      port INT NOT NULL,
+      pkg TEXT NOT NULL,
+      service TEXT NOT NULL,
+      method TEXT NOT NULL,
+      reqProto BLOB NOT NULL,
+      resProto BLOB NOT NULL,
+      req TEXT NOT NULL,
       res TEXT 
   )''';
 

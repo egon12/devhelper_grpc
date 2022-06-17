@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -18,7 +19,6 @@ class CallEdit extends GetView<CallEditController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Obx(() => Text(controller.title.string))),
-      //bottomSheet: AddServerBottomSheet(),
       body: SingleChildScrollView(
         child: Form(
           child: Padding(
@@ -62,37 +62,38 @@ class ServerDropdownList extends GetView<CallEditController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => DropdownButtonFormField(
-        decoration: const InputDecoration(
-          label: Text('Server'),
-          border: OutlineInputBorder(),
-        ),
-        value: controller.selectedServer.string,
-        onChanged: (str) {
-          if (str == '___add_new___') {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              builder: buildModalBottomSheet,
-            );
-          } else {
-            controller.showServiceFrom(str.toString());
-          }
-        },
-        items: [
-          ...controller.servers.map(
-            (it) => DropdownMenuItem(
-              value: it.toString(),
-              child: Text(it.toString()),
-            ),
-          ),
-          const DropdownMenuItem(
-            value: '___add_new___',
-            child: Text('Add New'),
-          ),
-        ],
+    return Obx(() {
+      if (controller.isLoadingServerList.value) {
+        return buildLoader(context, 'loading saved server ...');
+      } else {
+        return buildDropDown(context);
+      }
+    });
+  }
+
+  DropdownButtonFormField<String> buildDropDown(context) {
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(
+        label: Text('Server'),
+        border: OutlineInputBorder(),
       ),
+      isExpanded: true,
+      value: controller.selectedServer.string,
+      onChanged: (String? str) {
+        if (str == newServOpt) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            builder: buildModalBottomSheet,
+          );
+        } else {
+          controller.selectServer(str.toString());
+        }
+      },
+      items: [
+        ...controller.servers.map(toItem),
+        const DropdownMenuItem(value: newServOpt, child: Text('Add New')),
+      ],
     );
   }
 
@@ -124,22 +125,30 @@ class ServiceDropdownList extends GetView<CallEditController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => DropdownButtonFormField<String>(
-        isExpanded: true,
-        decoration: const InputDecoration(
-          label: Text('Service'),
-          border: OutlineInputBorder(),
-        ),
-        value: controller.selectedService.string,
-        onChanged: (str) {
-          controller.showMethodsFrom(str.toString());
-        },
-        items: [
-          emptyItem,
-          ...controller.services.map(toItem),
-        ],
+    return Obx(() {
+      if (controller.isLoadingServiceList.value) {
+        return buildLoader(context, 'loading services ...');
+      } else {
+        return buildDropDown(context);
+      }
+    });
+  }
+
+  Widget buildDropDown(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      isExpanded: true,
+      decoration: const InputDecoration(
+        label: Text('Service'),
+        border: OutlineInputBorder(),
       ),
+      value: controller.selectedService.string,
+      onChanged: (str) {
+        controller.selectService(str.toString());
+      },
+      items: [
+        emptyItem,
+        ...controller.services.map(toItem),
+      ],
     );
   }
 }
@@ -149,22 +158,27 @@ class MethodDropdownList extends GetView<CallEditController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => DropdownButtonFormField(
-        isExpanded: true,
-        decoration: const InputDecoration(
-          label: Text('Method'),
-          border: OutlineInputBorder(),
-        ),
-        value: controller.selectedMethod.string,
-        onChanged: (str) {
-          controller.generateBodyFrom(str.toString());
-        },
-        items: [
-          emptyItem,
-          ...controller.methods.map(toItem),
-        ],
+    return Obx(() {
+      if (controller.isLoadingMethodList.value) {
+        return buildLoader(context, 'loading methods ...');
+      } else {
+        return buildDropDown(context);
+      }
+    });
+  }
+
+  Widget buildDropDown(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      isExpanded: true,
+      decoration: const InputDecoration(
+        label: Text('Method'),
+        border: OutlineInputBorder(),
       ),
+      value: controller.selectedMethod.string,
+      onChanged: (str) {
+        controller.generateBodyFrom(str.toString());
+      },
+      items: [emptyItem, ...controller.methods.map(toItem)],
     );
   }
 }
@@ -236,18 +250,19 @@ class CallEditController extends GetxController {
 
   var title = 'Add new Call'.obs;
 
-  var addNewServerOptions = '___add_new___';
   var serverHost = ''.obs;
   var serverPort = ''.obs;
   var serverUseTLS = false.obs;
-
+  var isLoadingServerList = false.obs;
   var servers = List<Server>.empty().obs;
-  var selectedServer = '___add_new___'.obs;
+  var selectedServer = newServOpt.obs;
   var server = Server('', 0);
 
+  var isLoadingServiceList = false.obs;
   var services = List<String>.empty().obs;
   var selectedService = ''.obs;
 
+  var isLoadingMethodList = false.obs;
   var methods = List<String>.empty().obs;
   var selectedMethod = ''.obs;
 
@@ -258,9 +273,16 @@ class CallEditController extends GetxController {
   }
 
   void _start() async {
-    var serversFromDB = await serverRepo.all();
-    servers.clear();
-    servers.addAll(serversFromDB);
+    isLoadingServerList(true);
+    try {
+      var serversFromDB = await serverRepo.all();
+      servers.clear();
+      servers.addAll(serversFromDB);
+    } catch (e) {
+      Get.dialog(buildDialog("Error", e.toString()));
+    } finally {
+      isLoadingServerList(false);
+    }
   }
 
   void addServer() async {
@@ -282,18 +304,34 @@ class CallEditController extends GetxController {
 
   void open(String id) {}
 
-  void showServiceFrom(String serverChoosen) async {
-    server = servers.firstWhere((it) => it.toString() == serverChoosen);
-    var allServices = await server.reflection.services();
-    services.clear();
-    services.addAll(allServices);
+  void selectServer(String serverChoosen) async {
+    try {
+      isLoadingServiceList(true);
+      server = servers.firstWhere((it) => it.toString() == serverChoosen);
+      selectedServer.value = server.toString();
+      var allServices = await server.reflection.services();
+      services.clear();
+      services.addAll(allServices);
+    } catch (e) {
+      Get.dialog(buildDialog("Error", e.toString()));
+    } finally {
+      isLoadingServiceList(false);
+    }
   }
 
   List<MethodDescriptorProto> allMethods = [];
-  void showMethodsFrom(String serviceChoosen) async {
-    allMethods = await server.reflection.methods(serviceChoosen);
-    methods.clear();
-    methods.addAll(allMethods.map((i) => i.name));
+  void selectService(String serviceChoosen) async {
+    try {
+      isLoadingMethodList(true);
+      allMethods = await server.reflection.methods(serviceChoosen);
+      selectedService(serviceChoosen);
+      methods.clear();
+      methods.addAll(allMethods.map((i) => i.name));
+    } catch (e) {
+      Get.dialog(buildDialog("Error", e.toString()));
+    } finally {
+      isLoadingMethodList(false);
+    }
   }
 
   TextEditingController bodyCtrl = TextEditingController(text: '{}');
@@ -352,6 +390,36 @@ var callEditGetPage = GetPage(
 const emptyItem = DropdownMenuItem(child: Text(''), value: '');
 
 const vertPad = EdgeInsets.symmetric(vertical: 8.0);
+
+const newServOpt = '___add__new';
+
+Widget buildLoader(BuildContext context, String loadingText) {
+  return Shimmer.fromColors(
+    baseColor: Theme.of(context).highlightColor,
+    highlightColor: Colors.white,
+    child: TextFormField(
+      enabled: false,
+      decoration: InputDecoration(
+        label: Text(loadingText),
+        border: const OutlineInputBorder(),
+        fillColor: Colors.white,
+      ),
+    ),
+  );
+}
+
+Widget buildDialog(String title, String content) {
+  return AlertDialog(
+    title: Text(title),
+    content: Text(content),
+    actions: [
+      TextButton(
+        child: const Text("Close"),
+        onPressed: () => Get.back(),
+      ),
+    ],
+  );
+}
 
 DropdownMenuItem<String> toItem(Object? it) {
   return DropdownMenuItem(

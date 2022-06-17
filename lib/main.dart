@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'src/repository/call.dart';
 import 'src/repository/db.dart';
 import 'src/screen/call_list.dart';
 import 'src/screen/call_edit.dart';
@@ -8,6 +9,7 @@ void main() async {
   var db = await getDB();
   Get.put(db);
 
+  Get.lazyPut(() => CallRepo(db: db));
   Get.lazyPut(() => CallListController());
   runApp(const MyApp());
 }

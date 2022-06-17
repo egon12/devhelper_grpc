@@ -83,4 +83,23 @@ class CallPersistent {
       'res': res,
     };
   }
+
+  CallViewObject toViewObject() {
+    return CallViewObject(
+        pkg: pkg, service: service, method: method, request: req);
+  }
+}
+
+class CallViewObject {
+  String pkg;
+  String service;
+  String method;
+
+  String request;
+
+  CallViewObject(
+      {required this.pkg,
+      required this.service,
+      required this.method,
+      required this.request});
 }

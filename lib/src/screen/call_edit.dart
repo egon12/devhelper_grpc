@@ -1,13 +1,15 @@
 import 'dart:convert';
 
-import 'package:devhelper_grpc/proto/descriptor.pb.dart';
-import 'package:devhelper_grpc/src/dynamic_message/dynamic_message.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../dynamic_message/dynamic_message.dart';
+import '../repository/call.dart';
 import '../repository/server.dart';
 import '../server/server.dart';
+import '../call/call.dart';
+import '../../proto/descriptor.pb.dart';
 
 class CallEdit extends GetView<CallEditController> {
   const CallEdit({Key? key}) : super(key: key);
@@ -43,6 +45,8 @@ class CallEdit extends GetView<CallEditController> {
                     //focusNode: controller.textFocus,
                   ),
                 ),
+                OutlinedButton(
+                    onPressed: controller.save, child: const Text('Save'))
               ],
             ),
           ),
@@ -226,6 +230,7 @@ class ServerEdit extends GetView<CallEditController> {
 
 class CallEditController extends GetxController {
   ServerRepo serverRepo = Get.find();
+  CallRepo callRepo = Get.find();
 
   var title = 'Add new Call'.obs;
 
@@ -275,8 +280,6 @@ class CallEditController extends GetxController {
 
   void open(String id) {}
 
-  void save() {}
-
   void showServiceFrom(String serverChoosen) async {
     server = servers.firstWhere((it) => it.toString() == serverChoosen);
     var allServices = await server.reflection.services();
@@ -292,15 +295,40 @@ class CallEditController extends GetxController {
   }
 
   TextEditingController bodyCtrl = TextEditingController();
+  MethodDescriptorProto? method;
+  DescriptorProto? reqProto;
+  DescriptorProto? resProto;
   void generateBodyFrom(String methodName) async {
-    var method = allMethods.firstWhere((element) => element.name == methodName);
-    var inputType =
-        await server.reflection.message(method.inputType.substring(1));
+    method = allMethods.firstWhere((element) => element.name == methodName);
+    reqProto = await server.reflection.message(method!.inputType.substring(1));
+    resProto = await server.reflection.message(method!.outputType.substring(1));
 
     // TODO set the package name
-    var dm = DynamicMessage.fromDescriptor(inputType, '');
+    // TODO throw error if cannot find req Proto
+    var dm = DynamicMessage.fromDescriptor(reqProto!, '');
     var body = jsonEncode(dm.toProto3Json());
     bodyCtrl.text = body;
+  }
+
+  void save() {
+    // TODO throw Exception when reqProto is nil
+
+    var methodName = method?.name ?? '';
+
+    var c = CallPersistent(
+      name: '$selectedService/$methodName',
+      host: server.host,
+      port: server.port,
+      pkg: selectedService.string,
+      service: selectedService.string,
+      method: methodName,
+      reqProto: reqProto ?? DescriptorProto(),
+      resProto: resProto ?? DescriptorProto(),
+      req: bodyCtrl.text,
+    );
+
+    callRepo.save(c);
+    Get.back();
   }
 }
 
@@ -309,6 +337,7 @@ class CallEditBinding extends Bindings {
   void dependencies() {
     Database db = Get.find();
     Get.lazyPut(() => ServerRepo(db: db));
+    Get.lazyPut(() => CallRepo(db: db));
     Get.lazyPut(() => CallEditController());
   }
 }

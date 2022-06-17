@@ -13,6 +13,13 @@ class CallRepo {
     var rows = await db.query(_tableName);
     return rows.map((r) => CallPersistent.fromMap(r));
   }
+  
+  // TODO remove this and using all or group Use one call Persistence
+  // only if possible
+  Future<List<CallViewObject>> allViewObject() async {
+    var rows = await db.query(_tableName);
+    return rows.map((r) => CallPersistent.fromMap(r).toViewObject()).toList();
+  }
 
   Future<void> save(CallPersistent c) async {
     await db.insert(_tableName, c.toMap(),

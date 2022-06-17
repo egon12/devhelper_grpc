@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 
+import '../call/call.dart';
+import '../repository/call.dart';
+
 class CallList extends GetView<CallListController> {
   const CallList({Key? key}) : super(key: key);
 
@@ -80,7 +83,7 @@ class CallViewItem extends StatelessWidget {
 
     return ListTile(
         leading: const Icon(Icons.bookmark),
-        title: Text(d.package + "." + d.service + "/" + d.method),
+        title: Text(d.pkg + "." + d.service + "/" + d.method),
         subtitle: Text(d.request),
         trailing: IconButton(
           icon: const Icon(Icons.send),
@@ -96,52 +99,22 @@ class CallListController extends GetxController {
 
   var server = TextEditingController(text: "Hello");
 
+  CallRepo callRepo = Get.find();
+
   @override
   void onInit() {
     super.onInit();
-    var calls = Future.value([
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get1", request: "{1}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get2", request: "{2}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get3", request: "{3}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get4", request: "{}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get4", request: "{}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get4", request: "{}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get4", request: "{}"),
-      CallViewObject(
-          package: "pkg", service: "Service", method: "Get4", request: "{}"),
-      CallViewObject(
-          package: "pkg",
-          service: "Service",
-          method: "Set",
-          request: '{"key":"mykey", "value": "myvalue"}'),
-    ]);
-    rx.append(() => () => calls);
+    load();
     title = "myserver.service.aws-main-ap-souteast-1.consul:50051";
   }
   //var rx = List<String>.from().reactive;
 
+  void load() async {
+    rx.append(() => callRepo.allViewObject);
+  }
+
   void newCall() async {
     await Get.toNamed("/call/edit");
+    load();
   }
-}
-
-class CallViewObject {
-  String package;
-  String service;
-  String method;
-
-  String request;
-
-  CallViewObject(
-      {required this.package,
-      required this.service,
-      required this.method,
-      required this.request});
 }

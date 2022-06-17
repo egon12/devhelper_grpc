@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:typed_data';
 import 'package:protobuf/protobuf.dart';
 import '../../proto/descriptor.pb.dart';
 
@@ -29,6 +30,67 @@ class DynamicMessage extends GeneratedMessage {
     final tagNumber = fieldTag[name];
     assert(tagNumber != null);
     setField(tagNumber!, value);
+  }
+
+  // TODO maybe there are better way by using protobuf function
+  void setDefaultToAll() {
+    for (var e in fieldType.entries) {
+      switch (e.value) {
+        case FieldDescriptorProto_Type.TYPE_BOOL:
+          set(e.key, false);
+          break;
+        case FieldDescriptorProto_Type.TYPE_BYTES:
+          set(e.key, Uint8List(0));
+          break;
+        case FieldDescriptorProto_Type.TYPE_DOUBLE:
+          set(e.key, 0.0);
+          break;
+        case FieldDescriptorProto_Type.TYPE_ENUM:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_FIXED32:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_FIXED64:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_FLOAT:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_GROUP:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_INT32:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_INT64:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_MESSAGE:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_SFIXED32:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_SFIXED64:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_SINT32:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_SINT64:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_STRING:
+          set(e.key, "");
+          break;
+        case FieldDescriptorProto_Type.TYPE_UINT32:
+          // TODO: Handle this case.
+          break;
+        case FieldDescriptorProto_Type.TYPE_UINT64:
+          break;
+      }
+    }
   }
 
   dynamic get(String name) {

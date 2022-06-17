@@ -325,8 +325,10 @@ class CallEditController extends GetxController {
       isLoadingMethodList(true);
       allMethods = await server.reflection.methods(serviceChoosen);
       selectedService(serviceChoosen);
+      selectedMethod(allMethods[0].name);
       methods.clear();
       methods.addAll(allMethods.map((i) => i.name));
+      generateBodyFromSelected();
     } catch (e) {
       Get.dialog(buildDialog("Error", e.toString()));
     } finally {
@@ -346,6 +348,21 @@ class CallEditController extends GetxController {
     // TODO set the package name
     // TODO throw error if cannot find req Proto
     var dm = DynamicMessage.fromDescriptor(reqProto!, '');
+    dm.setDefaultToAll();
+    var body = jsonEncode(dm.toProto3Json());
+    bodyCtrl.text = body;
+  }
+
+  void generateBodyFromSelected() async {
+    method = allMethods
+        .firstWhere((element) => element.name == selectedMethod.string);
+    reqProto = await server.reflection.message(method!.inputType.substring(1));
+    resProto = await server.reflection.message(method!.outputType.substring(1));
+
+    // TODO set the package name
+    // TODO throw error if cannot find req Proto
+    var dm = DynamicMessage.fromDescriptor(reqProto!, '');
+    dm.setDefaultToAll();
     var body = jsonEncode(dm.toProto3Json());
     bodyCtrl.text = body;
   }
@@ -387,7 +404,7 @@ var callEditGetPage = GetPage(
     page: () => const CallEdit(),
     binding: CallEditBinding());
 
-const emptyItem = DropdownMenuItem(child: Text(''), value: '');
+const emptyItem = DropdownMenuItem(child: Text(''), value: '', enabled: false);
 
 const vertPad = EdgeInsets.symmetric(vertical: 8.0);
 

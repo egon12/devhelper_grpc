@@ -35,4 +35,15 @@ void main() {
     var r = Response(message: 'this is message', count: Int64(3288172));
     expect(dm.writeToBuffer(), r.writeToBuffer());
   });
+
+  test('create json input', () {
+    var dpJson =
+        '{"1":"Response","2":[{"1":"message","3":1,"5":9,"6":"string"},{"1":"count","3":2,"5":3,"6":"int64"}]}';
+    var dp = DescriptorProto.fromJson(dpJson);
+    var dm = DynamicMessage.fromDescriptor(dp, '');
+    dm.set('count', Int64(0));
+
+    var res = dm.toProto3Json();
+    expect(jsonEncode(res), '{"message":"","count":"0"}');
+  });
 }

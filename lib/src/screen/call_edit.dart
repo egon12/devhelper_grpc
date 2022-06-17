@@ -37,9 +37,10 @@ class CallEdit extends GetView<CallEditController> {
                   padding: vertPad,
                   child: TextField(
                     decoration: const InputDecoration(
+                      label: Text('Body'),
                       border: OutlineInputBorder(),
                     ),
-                    maxLines: 100, // TODO set max height instead maxLines 
+                    maxLines: null,
                     style: const TextStyle(fontFamily: 'Monospace'),
                     controller: controller.bodyCtrl,
                     //focusNode: controller.textFocus,
@@ -72,6 +73,7 @@ class ServerDropdownList extends GetView<CallEditController> {
           if (str == '___add_new___') {
             showModalBottomSheet(
               context: context,
+              isScrollControlled: true,
               builder: buildModalBottomSheet,
             );
           } else {
@@ -96,10 +98,10 @@ class ServerDropdownList extends GetView<CallEditController> {
 
   Widget buildModalBottomSheet(BuildContext context) {
     return SingleChildScrollView(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
       child: Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         decoration: BoxDecoration(
           color: Theme.of(context).backgroundColor,
           borderRadius: const BorderRadius.only(
@@ -294,7 +296,7 @@ class CallEditController extends GetxController {
     methods.addAll(allMethods.map((i) => i.name));
   }
 
-  TextEditingController bodyCtrl = TextEditingController();
+  TextEditingController bodyCtrl = TextEditingController(text: '{}');
   MethodDescriptorProto? method;
   DescriptorProto? reqProto;
   DescriptorProto? resProto;

@@ -6,6 +6,8 @@ import 'src/screen/call_list.dart';
 import 'src/screen/call_edit.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   var db = await getDB();
   Get.put(db);
 

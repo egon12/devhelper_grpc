@@ -134,30 +134,18 @@ class ServiceDropdownList extends GetView<CallEditController> {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.isLoadingServiceList.value) {
-        return buildLoader(context, 'loading services ...');
-      } else {
-        return buildDropDown(context);
-      }
-    });
+    return Obx(() => controller.isLoadingServices.value
+        ? buildLoader(context, 'loading services ...')
+        : buildDropDown(context));
   }
 
   Widget buildDropDown(BuildContext context) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
-      decoration: const InputDecoration(
-        label: Text('Service'),
-        border: OutlineInputBorder(),
-      ),
+      decoration: outlined(label: 'Service'),
       value: controller.selectedService.string,
-      onChanged: (str) {
-        controller.selectService(str.toString());
-      },
-      items: [
-        emptyItem,
-        ...controller.services.map(toItem),
-      ],
+      onChanged: controller.selectService,
+      items: [emptyItem, ...controller.services.map(toItem)],
     );
   }
 }
@@ -267,7 +255,7 @@ class CallEditController extends GetxController {
   var selectedServer = newServOpt.obs;
   var server = Server('', 0);
 
-  var isLoadingServiceList = false.obs;
+  var isLoadingServices = false.obs;
   var services = List<String>.empty().obs;
   var selectedService = ''.obs;
 
@@ -315,7 +303,7 @@ class CallEditController extends GetxController {
 
   void selectServer(String serverChoosen) async {
     try {
-      isLoadingServiceList(true);
+      isLoadingServices(true);
       server = servers.firstWhere((it) => it.toString() == serverChoosen);
       selectedServer.value = server.toString();
       var allServices = await server.reflection.services();
@@ -324,12 +312,17 @@ class CallEditController extends GetxController {
     } catch (e) {
       Get.dialog(buildDialog("Error", e.toString()));
     } finally {
-      isLoadingServiceList(false);
+      isLoadingServices(false);
     }
   }
 
   List<MethodDescriptorProto> allMethods = [];
-  void selectService(String serviceChoosen) async {
+  void selectService(String? serviceChoosen) async {
+    if (serviceChoosen == null) {
+      methods.clear();
+      return;
+    }
+
     try {
       isLoadingMethodList(true);
       allMethods = await server.reflection.methods(serviceChoosen);
@@ -450,6 +443,11 @@ Widget buildLoader(BuildContext context, String loadingText) {
     ),
   );
 }
+
+InputDecoration outlined({String label = ''}) => InputDecoration(
+      label: Text(label),
+      border: const OutlineInputBorder(),
+    );
 
 Widget buildDialog(String title, String content) {
   return AlertDialog(

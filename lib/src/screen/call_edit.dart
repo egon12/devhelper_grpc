@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:grpc/grpc.dart' hide Server;
 import 'package:shimmer/shimmer.dart';
 import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
@@ -46,8 +47,16 @@ class CallEdit extends GetView<CallEditController> {
                     //focusNode: controller.textFocus,
                   ),
                 ),
-                OutlinedButton(
-                    onPressed: controller.save, child: const Text('Save'))
+                Row(
+                  children: [
+                    OutlinedButton(
+                      onPressed: controller.save,
+                      child: const Text('Save'),
+                    ),
+                    OutlinedButton(
+                        onPressed: controller.call, child: const Text('Call'))
+                  ],
+                )
               ],
             ),
           ),
@@ -348,8 +357,7 @@ class CallEditController extends GetxController {
     // TODO set the package name
     // TODO throw error if cannot find req Proto
     var dm = DynamicMessage.fromDescriptor(reqProto!, '');
-    dm.setDefaultToAll();
-    var body = jsonEncode(dm.toProto3Json());
+    var body = dm.generateEditableJson();
     bodyCtrl.text = body;
   }
 
@@ -362,8 +370,7 @@ class CallEditController extends GetxController {
     // TODO set the package name
     // TODO throw error if cannot find req Proto
     var dm = DynamicMessage.fromDescriptor(reqProto!, '');
-    dm.setDefaultToAll();
-    var body = jsonEncode(dm.toProto3Json());
+    var body = dm.generateEditableJson();
     bodyCtrl.text = body;
   }
 
@@ -386,6 +393,25 @@ class CallEditController extends GetxController {
 
     callRepo.save(c);
     Get.back();
+  }
+
+  void call() async {
+    // TODO think if method is empty
+    var odm = DynamicMessage.fromDescriptor(resProto!, '');
+
+    final cm = ClientMethod(
+      "/" + selectedService.string + "/" + (method?.name ?? ''),
+      (DynamicMessage dm) => dm.writeToBuffer(),
+      (List<int> value) => odm.fromBuffer(value),
+    );
+
+    var dm = DynamicMessage.fromDescriptor(reqProto!, '');
+    dm.mergeFromProto3Json(jsonDecode(bodyCtrl.text));
+
+    var call = server.channel.createCall(cm, Stream.value(dm), CallOptions());
+
+    var res = await call.response.first;
+    Get.dialog(buildDialog("Response", res.toString()));
   }
 }
 

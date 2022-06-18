@@ -53,4 +53,26 @@ void main() {
     expect(res.get('content'), 'hallo');
     expect(res.toProto3Json(), {'content': 'hallo'});
   }, skip: 'need grpc server');
+
+  test('DumpHealthCheck Response', () async {
+    final c = ClientChannel(
+      'localhost',
+      port: 50051,
+      options: const ChannelOptions(
+        credentials: ChannelCredentials.insecure(),
+      ),
+    );
+
+    final sc = ReflectionClient(c);
+    final services = await sc.services();
+
+    final methods = await sc.methods(services.first);
+
+    final method = methods[0];
+
+    final outputDP = await sc.message(method.outputType.substring(1));
+
+    expect(outputDP.writeToJson(), '');
+  }, skip: 'need grpc server');
+  //});
 }

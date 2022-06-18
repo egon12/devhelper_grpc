@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:protobuf/protobuf.dart';
@@ -10,6 +11,8 @@ class DynamicMessage extends GeneratedMessage {
   Map<String, int> fieldTag;
 
   Map<String, FieldDescriptorProto_Type> fieldType;
+
+  var jsonEncoder = const JsonEncoder.withIndent('  ');
 
   DynamicMessage(
       {required this.info_, required this.fieldTag, required this.fieldType});
@@ -30,6 +33,13 @@ class DynamicMessage extends GeneratedMessage {
     final tagNumber = fieldTag[name];
     assert(tagNumber != null);
     setField(tagNumber!, value);
+  }
+
+  // TODO maybe need to use clone, so it won't affect real object
+  String generateEditableJson() {
+    setDefaultToAll();
+    var body = toProto3Json();
+    return jsonEncoder.convert(body);
   }
 
   // TODO maybe there are better way by using protobuf function
@@ -182,9 +192,9 @@ class DynamicMessage extends GeneratedMessage {
     return this;
   }
 
-  factory DynamicMessage.fromDescriptor(
-      DescriptorProto dp, String packageName) {
-    final info = _fromDescriptor(dp, packageName);
+  factory DynamicMessage.fromDescriptor(DescriptorProto dp, String packageName,
+      {FileDescriptorSet? fds}) {
+    final info = _fromDescriptor(dp, packageName: packageName, fds: fds);
     final fieldTag = _genMapNumber(dp);
     final fieldType = _genMapType(dp);
 
@@ -209,9 +219,20 @@ Map<String, FieldDescriptorProto_Type> _genMapType(DescriptorProto dp) {
   return m;
 }
 
-BuilderInfo _fromDescriptor(DescriptorProto dp, [String packageName = '']) {
+BuilderInfo _fromDescriptor(DescriptorProto dp,
+    {String packageName = '', FileDescriptorSet? fds}) {
   final info = BuilderInfo(dp.name,
       package: PackageName(packageName), createEmptyInstance: null);
+
+  var valueOfFuncs = <String, ValueOfFunc>{};
+  var enumValues = <String, List<ProtobufEnum>>{};
+
+  for (var e in dp.enumType) {
+    var values = e.value.map((e) => ProtobufEnum(e.number, e.name));
+    enumValues[".$packageName.${dp.name}.${e.name}"] = values.toList();
+    valueOfFuncs[".$packageName.${dp.name}.${e.name}"] =
+        (value) => values.firstWhere((element) => element.value == value);
+  }
 
   // dummy so index = fd.number
   info.add(0, '', null, null, null, null, null);
@@ -369,10 +390,14 @@ BuilderInfo _fromDescriptor(DescriptorProto dp, [String packageName = '']) {
       case FieldDescriptorProto_Type.TYPE_ENUM:
         switch (fd.label) {
           case FieldDescriptorProto_Label.LABEL_OPTIONAL:
-            info.a(fd.number, fd.name, PbFieldType.OE);
+            info.e(fd.number, fd.name, PbFieldType.OE,
+                defaultOrMaker: fd.defaultValue,
+                valueOf: valueOfFuncs[fd.typeName],
+                enumValues: enumValues[fd.typeName]);
             break;
           case FieldDescriptorProto_Label.LABEL_REQUIRED:
-            info.a(fd.number, fd.name, PbFieldType.QE);
+            info.a(fd.number, fd.name, PbFieldType.QE,
+                defaultOrMaker: fd.defaultValue);
             break;
           case FieldDescriptorProto_Label.LABEL_REPEATED:
             info.p(fd.number, fd.name, PbFieldType.PE);

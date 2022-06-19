@@ -25,9 +25,11 @@ class DynamicMessage extends GeneratedMessage {
   DynamicMessage clone() =>
       DynamicMessage(info_: info_, fieldTag: fieldTag, fieldType: fieldType);
 
-  dynamic getAt(int index) {
-    return $_get(index, '');
-  }
+  void readJson(String json) => mergeFromProto3Json(jsonDecode(json));
+
+  String toJson() => jsonEncoder.convert(toProto3Json());
+
+  dynamic getAt(int index) => $_get(index, '');
 
   void set(String name, dynamic value) {
     final tagNumber = fieldTag[name];

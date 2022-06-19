@@ -56,8 +56,7 @@ void main() {
         '{"1":"HealthCheckResponse","2":[{"1":"status","3":1,"4":1,"5":14,"6":".grpc.health.v1.HealthCheckResponse.ServingStatus","10":"status"}],"4":[{"1":"ServingStatus","2":[{"1":"UNKNOWN","2":0},{"1":"SERVING","2":1},{"1":"NOT_SERVING","2":2},{"1":"SERVICE_UNKNOWN","2":3}]}]}';
     var dp = DescriptorProto.fromJson(dpJson);
     var dm = DynamicMessage.fromDescriptor(dp, 'grpc.health.v1');
-    dm.mergeFromProto3Json(jsonDecode('{"status":"SERVING"}'));
-    //dm.set('status', 'SERVING');
-    expect(dm.toProto3Json(), null);
+    dm.readJson('{"status":"SERVING"}');
+    expect(jsonEncode(dm.toProto3Json()), '{"status":"SERVING"}');
   });
 }

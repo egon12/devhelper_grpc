@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('test save', () async {
-    var db = await getDB();
+    var db = await getTestDB();
     var c = CallRepo(db: db);
 
     var callPersistence = CallPersistent(

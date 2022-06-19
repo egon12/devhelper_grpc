@@ -7,12 +7,22 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'server.dart';
 
 Future<Database> getDB() {
+  String dbFilename = 'devhelper_grpc.db';
+  return getDBWithFilename(dbFilename);
+}
+
+Future<Database> getTestDB() {
+  String dbFilename = 'devhelper_grpc_test.db';
+  return getDBWithFilename(dbFilename);
+}
+
+Future<Database> getDBWithFilename(String dbFilename) {
   DatabaseFactory databaseFactory;
   if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
     return databaseFactory.openDatabase(
-      'devhelper_grpc.db',
+      dbFilename,
       options: OpenDatabaseOptions(
         version: 1,
         onCreate: onCreate,
@@ -23,7 +33,7 @@ Future<Database> getDB() {
   }
 
   return openDatabase(
-    'devhelper_grpc.db',
+    dbFilename,
     version: 1,
     onCreate: onCreate,
     onUpgrade: onUpgrade,

@@ -1,102 +1,92 @@
-import 'package:devhelper_grpc/src/repository/server.dart';
-import 'package:devhelper_grpc/src/repository/call.dart';
-import 'package:devhelper_grpc/proto/descriptor.pb.dart';
-import 'dart:ui';
-
 import 'package:devhelper_grpc/src/screen/call_edit.dart';
-import 'package:flutter/src/widgets/editable_text.dart';
 import 'package:devhelper_grpc/src/server/server.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:get/get_state_manager/src/simple/list_notifier.dart';
+import 'package:flutter/material.dart';
 
 void main() {
-  testWidgets('call list ...', (tester) async {
-    Get.lazyPut(() => CallEditController());
-    await tester.pumpWidget(const CallEdit());
-  });
+  testWidgets(
+    "on all loading",
+    (WidgetTester tester) async {
+      var ctrl = ControllerMock();
+      ctrl.isLoadingServers(true);
+      ctrl.isLoadingServices(true);
+      ctrl.isLoadingMethods(true);
+
+      // ignore: unnecessary_cast
+      Get.put(ctrl as CallEditController);
+
+      await tester.pumpWidget(const MaterialApp(home: CallEdit()));
+
+      expect(find.text('loading saved server ...'), findsOneWidget);
+      expect(find.text('loading services ...'), findsOneWidget);
+      expect(find.text('loading methods ...'), findsOneWidget);
+    },
+  );
+
+  testWidgets("on server choosen", (WidgetTester tester) async {
+    var ctrl = ControllerMock();
+    ctrl.isLoadingServices(true);
+    ctrl.isLoadingMethods(true);
+
+    ctrl.servers.value = <Server>[Server('localhost', 50051)];
+    ctrl.selectedServer.value = 'localhost:50051';
+
+    // ignore: unnecessary_cast
+    Get.put(ctrl as CallEditController);
+
+    await tester.pumpWidget(const MaterialApp(home: CallEdit()));
+
+    // TODO failed in file, pass in single test
+    expect(find.text('localhost:50051'), findsOneWidget);
+  }, skip: true);
+
+  testWidgets(
+    "try to select server",
+    (WidgetTester tester) async {
+      var ctrl = ControllerMock();
+      ctrl.isLoadingServices(true);
+      ctrl.isLoadingMethods(true);
+
+      ctrl.servers.value = <Server>[
+        Server('localhost', 50051),
+        Server('anotherhost', 50052),
+      ];
+      ctrl.selectedServer.value = 'localhost:50051';
+
+      // ignore: unnecessary_cast
+      Get.put(ctrl as CallEditController);
+
+      await tester.pumpWidget(const MaterialApp(home: CallEdit()));
+
+      await tester.tap(find.text('localhost:50051'));
+      expect(find.text('anotherhost:50052'), findsOneWidget);
+
+      // TODO find why it failed in here.
+      await tester.tap(find.text('anotherhost:50052'));
+      expect(ctrl.selectedServer.value, 'anotherhost:50052');
+      //expect(find.text('localhost:50051'), findsNothing);
+    },
+    skip: true,
+  );
 }
 
-class ControllerMock implements CallEditController {
+/*
+ * ControllerMock is my try to create test double by myuself
+ * Maybe need a mockito for better coding experience
+ */
+class ControllerMock extends GetxController implements CallEditController {
   @override
-  List<MethodDescriptorProto> allMethods;
+  final RxBool isLoadingMethods = false.obs;
+  @override
+  final RxBool isLoadingServers = false.obs;
+  @override
+  final RxBool isLoadingServices = false.obs;
 
   @override
-  TextEditingController bodyCtrl;
-
+  final servers = <Server>[Server('', 0)].obs;
   @override
-  CallRepo callRepo;
-
-  @override
-  RxBool isLoadingMethodList;
-
-  @override
-  RxBool isLoadingServerList;
-
-  @override
-  RxBool isLoadingServices;
-
-  @override
-  MethodDescriptorProto? method;
-
-  @override
-  RxList<String> methods;
-
-  @override
-  DescriptorProto? reqProto;
-
-  @override
-  DescriptorProto? resProto;
-
-  @override
-  RxString selectedMethod;
-
-  @override
-  RxString selectedServer;
-
-  @override
-  RxString selectedService;
-
-  @override
-  Server server;
-
-  @override
-  RxString serverHost;
-
-  @override
-  RxString serverPort;
-
-  @override
-  ServerRepo serverRepo;
-
-  @override
-  RxBool serverUseTLS;
-
-  @override
-  RxList<Server> servers;
-
-  @override
-  RxList<String> services;
-
-  @override
-  RxString title;
-
-  @override
-  void $configureLifeCycle() {
-    // TODO: implement $configureLifeCycle
-  }
-
-  @override
-  Disposer addListener(GetStateUpdate listener) {
-    // TODO: implement addListener
-    throw UnimplementedError();
-  }
-
-  @override
-  Disposer addListenerId(Object? key, GetStateUpdate listener) {
-    // TODO: implement addListenerId
-    throw UnimplementedError();
-  }
+  final selectedServer = ''.obs;
 
   @override
   void addServer() {
@@ -104,98 +94,16 @@ class ControllerMock implements CallEditController {
   }
 
   @override
+  final bodyCtrl = TextEditingController();
+
+  @override
   void call() {
     // TODO: implement call
   }
 
   @override
-  void dispose() {
-    // TODO: implement dispose
-  }
-
-  @override
-  void disposeId(Object id) {
-    // TODO: implement disposeId
-  }
-
-  @override
-  void generateBodyFrom(String methodName) {
-    // TODO: implement generateBodyFrom
-  }
-
-  @override
-  void generateBodyFromSelected() {
-    // TODO: implement generateBodyFromSelected
-  }
-
-  @override
-  // TODO: implement hasListeners
-  bool get hasListeners => throw UnimplementedError();
-
-  @override
-  // TODO: implement initialized
-  bool get initialized => throw UnimplementedError();
-
-  @override
-  // TODO: implement isClosed
-  bool get isClosed => throw UnimplementedError();
-
-  @override
-  // TODO: implement listeners
-  int get listeners => throw UnimplementedError();
-
-  @override
-  void notifyChildrens() {
-    // TODO: implement notifyChildrens
-  }
-
-  @override
-  void onClose() {
-    // TODO: implement onClose
-  }
-
-  @override
-  // TODO: implement onDelete
-  InternalFinalCallback<void> get onDelete => throw UnimplementedError();
-
-  @override
-  void onInit() {
-    // TODO: implement onInit
-  }
-
-  @override
-  void onReady() {
-    // TODO: implement onReady
-  }
-
-  @override
-  // TODO: implement onStart
-  InternalFinalCallback<void> get onStart => throw UnimplementedError();
-
-  @override
-  void open(String id) {
-    // TODO: implement open
-  }
-
-  @override
-  void refresh() {
-    // TODO: implement refresh
-  }
-
-  @override
-  void refreshGroup(Object id) {
-    // TODO: implement refreshGroup
-  }
-
-  @override
-  void removeListener(VoidCallback listener) {
-    // TODO: implement removeListener
-  }
-
-  @override
-  void removeListenerId(Object id, VoidCallback listener) {
-    // TODO: implement removeListenerId
-  }
+  // TODO: implement methods
+  RxList<String> get methods => throw UnimplementedError();
 
   @override
   void save() {
@@ -203,8 +111,13 @@ class ControllerMock implements CallEditController {
   }
 
   @override
+  void selectMethod(String methodName) {
+    // TODO: implement selectMethod
+  }
+
+  @override
   void selectServer(String serverChoosen) {
-    // TODO: implement selectServer
+    selectedServer(serverChoosen);
   }
 
   @override
@@ -213,8 +126,26 @@ class ControllerMock implements CallEditController {
   }
 
   @override
-  void update([List<Object>? ids, bool condition = true]) {
-    // TODO: implement update
-  }
+  // TODO: implement selectedMethod
+  RxString get selectedMethod => throw UnimplementedError();
 
+  @override
+  // TODO: implement selectedService
+  RxString get selectedService => throw UnimplementedError();
+
+  @override
+  // TODO: implement serverHost
+  RxString get serverHost => throw UnimplementedError();
+
+  @override
+  // TODO: implement serverPort
+  RxString get serverPort => throw UnimplementedError();
+
+  @override
+  // TODO: implement serverUseTLS
+  RxBool get serverUseTLS => throw UnimplementedError();
+
+  @override
+  // TODO: implement services
+  RxList<String> get services => throw UnimplementedError();
 }

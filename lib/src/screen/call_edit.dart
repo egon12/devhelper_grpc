@@ -19,7 +19,7 @@ class CallEdit extends GetView<CallEditController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Obx(() => Text(controller.title.string))),
+      appBar: AppBar(title: const Text('Add new Call')),
       body: SingleChildScrollView(
         child: Form(
           child: Padding(
@@ -72,20 +72,15 @@ class ServerDropdownList extends GetView<CallEditController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.isLoadingServerList.value) {
-        return buildLoader(context, 'loading saved server ...');
-      } else {
-        return buildDropDown(context);
-      }
+      return controller.isLoadingServers.isTrue
+          ? buildLoader(context, 'loading saved server ...')
+          : buildDropDown(context);
     });
   }
 
   DropdownButtonFormField<String> buildDropDown(context) {
     return DropdownButtonFormField<String>(
-      decoration: const InputDecoration(
-        label: Text('Server'),
-        border: OutlineInputBorder(),
-      ),
+      decoration: outlined(label: 'Server'),
       isExpanded: true,
       value: controller.selectedServer.string,
       onChanged: (String? str) {
@@ -106,6 +101,7 @@ class ServerDropdownList extends GetView<CallEditController> {
     );
   }
 
+  // TODO move this into one controller
   Widget buildModalBottomSheet(BuildContext context) {
     return SingleChildScrollView(
       child: Container(
@@ -156,7 +152,7 @@ class MethodDropdownList extends GetView<CallEditController> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      if (controller.isLoadingMethodList.value) {
+      if (controller.isLoadingMethods.value) {
         return buildLoader(context, 'loading methods ...');
       } else {
         return buildDropDown(context);
@@ -173,7 +169,7 @@ class MethodDropdownList extends GetView<CallEditController> {
       ),
       value: controller.selectedMethod.string,
       onChanged: (str) {
-        controller.generateBodyFrom(str.toString());
+        controller.selectMethod(str.toString());
       },
       items: [emptyItem, ...controller.methods.map(toItem)],
     );
@@ -242,26 +238,34 @@ class ServerEdit extends GetView<CallEditController> {
 }
 
 class CallEditController extends GetxController {
-  ServerRepo serverRepo = Get.find();
-  CallRepo callRepo = Get.find();
+  final serverHost = ''.obs;
+  final serverPort = ''.obs;
+  final serverUseTLS = false.obs;
 
-  var title = 'Add new Call'.obs;
+  final isLoadingServers = false.obs;
+  final servers = List<Server>.empty().obs;
+  final selectedServer = newServOpt.obs;
 
-  var serverHost = ''.obs;
-  var serverPort = ''.obs;
-  var serverUseTLS = false.obs;
-  var isLoadingServerList = false.obs;
-  var servers = List<Server>.empty().obs;
-  var selectedServer = newServOpt.obs;
-  var server = Server('', 0);
+  final isLoadingServices = false.obs;
+  final services = List<String>.empty().obs;
+  final selectedService = ''.obs;
 
-  var isLoadingServices = false.obs;
-  var services = List<String>.empty().obs;
-  var selectedService = ''.obs;
+  final isLoadingMethods = false.obs;
+  final methods = List<String>.empty().obs;
+  final selectedMethod = ''.obs;
 
-  var isLoadingMethodList = false.obs;
-  var methods = List<String>.empty().obs;
-  var selectedMethod = ''.obs;
+  final bodyCtrl = TextEditingController(text: '{}');
+
+  List<MethodDescriptorProto> _allMethods = [];
+
+  final ServerRepo _serverRepo = Get.find();
+
+  final CallRepo _callRepo = Get.find();
+
+  Server _server = Server('', 0);
+  MethodDescriptorProto? _method;
+  DescriptorProto? _reqProto;
+  DescriptorProto? _resProto;
 
   @override
   void onInit() {
@@ -270,15 +274,15 @@ class CallEditController extends GetxController {
   }
 
   void _start() async {
-    isLoadingServerList(true);
+    isLoadingServers(true);
     try {
-      var serversFromDB = await serverRepo.all();
+      var serversFromDB = await _serverRepo.all();
       servers.clear();
       servers.addAll(serversFromDB);
     } catch (e) {
       Get.dialog(buildDialog("Error", e.toString()));
     } finally {
-      isLoadingServerList(false);
+      isLoadingServers(false);
     }
   }
 
@@ -289,7 +293,7 @@ class CallEditController extends GetxController {
       serverUseTLS.value,
     );
 
-    await serverRepo.save(newServer);
+    await _serverRepo.save(newServer);
     _start();
 
     selectedServer.value = newServer.toString();
@@ -299,14 +303,14 @@ class CallEditController extends GetxController {
     serverUseTLS.value = false;
   }
 
-  void open(String id) {}
-
   void selectServer(String serverChoosen) async {
     try {
       isLoadingServices(true);
-      server = servers.firstWhere((it) => it.toString() == serverChoosen);
-      selectedServer.value = server.toString();
-      var allServices = await server.reflection.services();
+      _server = servers.firstWhere((it) => it.toString() == serverChoosen);
+      selectedServer.value = _server.toString();
+      var allServices = await _server.reflection.services();
+      selectedService('');
+      selectedMethod('');
       services.clear();
       services.addAll(allServices);
     } catch (e) {
@@ -316,7 +320,6 @@ class CallEditController extends GetxController {
     }
   }
 
-  List<MethodDescriptorProto> allMethods = [];
   void selectService(String? serviceChoosen) async {
     if (serviceChoosen == null) {
       methods.clear();
@@ -324,45 +327,33 @@ class CallEditController extends GetxController {
     }
 
     try {
-      isLoadingMethodList(true);
-      allMethods = await server.reflection.methods(serviceChoosen);
+      isLoadingMethods(true);
+      _allMethods = await _server.reflection.methods(serviceChoosen);
       selectedService(serviceChoosen);
-      selectedMethod(allMethods[0].name);
+      selectedMethod(_allMethods[0].name);
       methods.clear();
-      methods.addAll(allMethods.map((i) => i.name));
-      generateBodyFromSelected();
+      methods.addAll(_allMethods.map((i) => i.name));
+      _generateBodyFromSelected();
     } catch (e) {
       Get.dialog(buildDialog("Error", e.toString()));
     } finally {
-      isLoadingMethodList(false);
+      isLoadingMethods(false);
     }
   }
 
-  TextEditingController bodyCtrl = TextEditingController(text: '{}');
-  MethodDescriptorProto? method;
-  DescriptorProto? reqProto;
-  DescriptorProto? resProto;
-  void generateBodyFrom(String methodName) async {
-    method = allMethods.firstWhere((element) => element.name == methodName);
-    reqProto = await server.reflection.message(method!.inputType.substring(1));
-    resProto = await server.reflection.message(method!.outputType.substring(1));
-
-    // TODO set the package name
-    // TODO throw error if cannot find req Proto
-    var dm = DynamicMessage.fromDescriptor(reqProto!, '');
-    var body = dm.generateEditableJson();
-    bodyCtrl.text = body;
+  void selectMethod(String methodName) async {
+    selectedMethod.value = methodName;
+    _generateBodyFromSelected();
   }
 
-  void generateBodyFromSelected() async {
-    method = allMethods
-        .firstWhere((element) => element.name == selectedMethod.string);
-    reqProto = await server.reflection.message(method!.inputType.substring(1));
-    resProto = await server.reflection.message(method!.outputType.substring(1));
+  void _generateBodyFromSelected() async {
+    _method = _allMethods.firstWhere((e) => e.name == selectedMethod.string);
+    var reflection = _server.reflection;
+    _reqProto = await reflection.message(_method!.inputType.substring(1));
+    _resProto = await reflection.message(_method!.outputType.substring(1));
 
-    // TODO set the package name
     // TODO throw error if cannot find req Proto
-    var dm = DynamicMessage.fromDescriptor(reqProto!, '');
+    var dm = DynamicMessage.fromDescriptor(_reqProto!, _getPackage());
     var body = dm.generateEditableJson();
     bodyCtrl.text = body;
   }
@@ -370,41 +361,50 @@ class CallEditController extends GetxController {
   void save() {
     // TODO throw Exception when reqProto is nil
 
-    var methodName = method?.name ?? '';
+    var methodName = _method?.name ?? '';
 
     var c = CallPersistent(
       name: '$selectedService/$methodName',
-      host: server.host,
-      port: server.port,
+      host: _server.host,
+      port: _server.port,
       pkg: selectedService.string,
       service: selectedService.string,
       method: methodName,
-      reqProto: reqProto ?? DescriptorProto(),
-      resProto: resProto ?? DescriptorProto(),
+      reqProto: _reqProto ?? DescriptorProto(),
+      resProto: _resProto ?? DescriptorProto(),
       req: bodyCtrl.text,
     );
 
-    callRepo.save(c);
+    _callRepo.save(c);
     Get.back();
   }
 
   void call() async {
     // TODO think if method is empty
-    var odm = DynamicMessage.fromDescriptor(resProto!, '');
+    var odm = DynamicMessage.fromDescriptor(_resProto!, _getPackage());
 
     final cm = ClientMethod(
-      "/" + selectedService.string + "/" + (method?.name ?? ''),
+      "/" + selectedService.string + "/" + (_method?.name ?? ''),
       (DynamicMessage dm) => dm.writeToBuffer(),
       (List<int> value) => odm.fromBuffer(value),
     );
 
-    var dm = DynamicMessage.fromDescriptor(reqProto!, '');
+    var dm = DynamicMessage.fromDescriptor(_reqProto!, '');
     dm.mergeFromProto3Json(jsonDecode(bodyCtrl.text));
 
-    var call = server.channel.createCall(cm, Stream.value(dm), CallOptions());
+    var call = _server.channel.createCall(cm, Stream.value(dm), CallOptions());
 
     var res = await call.response.first;
     Get.dialog(buildDialog("Response", res.toString()));
+  }
+
+  String _getPackage() {
+    // TODO set the package name [DONE]
+    // TODO move this logic into somewhere else
+    var str = selectedService.string;
+    var ind = str.lastIndexOf('.');
+    var pkg = ind > -1 ? str.substring(0, ind) : '';
+    return pkg;
   }
 }
 

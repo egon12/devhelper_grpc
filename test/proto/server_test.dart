@@ -32,7 +32,7 @@ Future<String> conn() async {
     'localhost',
     port: 50053,
     options: ChannelOptions(
-      credentials: ChannelCredentials.insecure(),
+      credentials: const ChannelCredentials.insecure(),
       codecRegistry: CodecRegistry(),
     ),
   );

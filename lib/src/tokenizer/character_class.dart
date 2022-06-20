@@ -46,9 +46,8 @@ class Unprintable implements CharacterClass {
 
 	@override
 	bool inClass(String c) {
-		const space = 32; // for ' '
 		var cc = c.codeUnitAt(0);
-		return cc < 32 && cc > 0;
+		return cc < nspace && cc > 0;
 	}
 }
 

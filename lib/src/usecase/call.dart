@@ -66,7 +66,7 @@ extension SearchCallBlock on CallBlocks {
   }
 }
 
-extension _ on String {
+extension GRPCIdentity on String {
   String package() {
     final arr = split('/');
     return arr[arr.length - 2];

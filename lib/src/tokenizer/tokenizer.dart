@@ -238,7 +238,7 @@ class Tokenizer {
 	}
 
 	TokenType consumeNumber(bool startedWithZero, bool startedWithDot) {
-		bool is_float = false;
+		bool isFloat = false;
 
 		if (startedWithZero && (tryConsume('x') || tryConsume('X'))) {
 			// A hex number (started with "0x").
@@ -254,32 +254,32 @@ class Tokenizer {
 		} else {
 			// A decimal number.
 			if (startedWithDot) {
-				is_float = true;
+				isFloat = true;
 				consumeZeroOrMore(Digit());
 			} else {
 				consumeZeroOrMore(Digit());
 
 				if (tryConsume('.')) {
-					is_float = true;
+					isFloat = true;
 					consumeZeroOrMore(Digit());
 				}
 			}
 
 			if (tryConsume('e') || tryConsume('E')) {
-				is_float = true;
+				isFloat = true;
 				tryConsume('-') || tryConsume('+');
 				consumeOneOrMore(Digit(), "\"e\" must be followed by exponent.");
 			}
 
 			if (_allowFAfterFloat && (tryConsume('f') || tryConsume('F'))) {
-				is_float = true;
+				isFloat = true;
 			}
 		}
 
 		if (lookingAt(Letter()) && _requireSpaceAfterNumber) {
 			addError("Need space between number and identifier.");
 		} else if (_currentChar == '.') {
-			if (is_float) {
+			if (isFloat) {
 				addError(
 						"Already saw decimal point or exponent; can't have another one.");
 			} else {
@@ -287,7 +287,7 @@ class Tokenizer {
 			}
 		}
 
-		return is_float ? TokenType.float : TokenType.integer;
+		return isFloat ? TokenType.float : TokenType.integer;
 	}
 
 	void consumeLineComment(StringSink? content) {

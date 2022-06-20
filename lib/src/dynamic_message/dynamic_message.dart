@@ -229,10 +229,12 @@ BuilderInfo _fromDescriptor(DescriptorProto dp,
   var valueOfFuncs = <String, ValueOfFunc>{};
   var enumValues = <String, List<ProtobufEnum>>{};
 
+  // TODO try to fix this hack adding dot before pacakgeName
   for (var e in dp.enumType) {
     var values = e.value.map((e) => ProtobufEnum(e.number, e.name));
-    enumValues[".$packageName.${dp.name}.${e.name}"] = values.toList();
-    valueOfFuncs[".$packageName.${dp.name}.${e.name}"] =
+    var key = ".$packageName.${dp.name}.${e.name}";
+    enumValues[key] = values.toList();
+    valueOfFuncs[key] =
         (value) => values.firstWhere((element) => element.value == value);
   }
 

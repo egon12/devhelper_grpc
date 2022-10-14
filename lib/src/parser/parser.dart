@@ -89,7 +89,6 @@ class Parser {
   }
 
   String processPackage(Iterator<Token> it) {
-    // TODO process package with dot like org.mycompany.myapp.v1
     if (!it.moveNext() || it.current.text != 'package') {
       throw it.current.exception(filename, "expect package");
     }
@@ -134,8 +133,65 @@ class Parser {
   }
 
   EnumDescriptorProto processEnum(Iterator<Token> it) {
-    // TODO processEnum
-    return EnumDescriptorProto();
+    if (!it.moveNext() || it.current.type != TokenType.identifier) {
+      throw it.current.exception(filename, "expect enum name after 'enum'");
+    }
+
+    var name = it.current.text;
+
+    if (!it.moveNext() || it.current.text != '{') {
+      throw Exception("expect { after enum name");
+    }
+
+    List<EnumValueDescriptorProto> value = [];
+    while (it.moveNext()) {
+      switch (it.current.text) {
+        case '}':
+          return EnumDescriptorProto(
+            name: name,
+            value: value,
+            options: null,
+          );
+        case 'option':
+          // TODO processEnumOptions
+          throw it.current.exception(filename, "options enum not implemented");
+        default:
+          value.add(processEnumValue(it));
+          break;
+      }
+    }
+
+    return EnumDescriptorProto(name: name, value: value, options: null);
+  }
+
+  EnumValueDescriptorProto processEnumValue(Iterator<Token> it) {
+    if (it.current.type != TokenType.identifier) {
+      throw it.current.exception(filename, "expect enum value name");
+    }
+
+    var name = it.current.text;
+
+    if (!it.moveNext() || it.current.text != '=') {
+      throw it.current.exception(filename, "expect = after enum value name");
+    }
+
+    if (!it.moveNext() || it.current.type != TokenType.integer) {
+      throw it.current
+          .exception(filename, "expect number after enum value name");
+    }
+
+    var number = int.parse(it.current.text);
+
+    if (!it.moveNext() || it.current.text != ';') {
+      throw it.current.exception(filename, "expect ; after enum value name");
+    }
+
+    // TODO processEnumValueOptions
+    return EnumValueDescriptorProto(
+      name: name,
+      number: number,
+      options: null,
+    );
   }
 
   DescriptorProto processMessage(Iterator<Token> it) {
@@ -380,19 +436,19 @@ class Parser {
     var typeName = it.current.text;
     var type = processType(it.current);
     if (!it.moveNext()) {
-      throw Exception("expect name after typename");
+      throw it.current.exception(filename, "expect name after typename");
     }
 
     var name = it.current.text;
     if (!it.moveNext() || it.current.text != '=') {
-      throw Exception("expect = after field's name");
+      throw it.current.exception(filename, "expect = after field's name");
     }
     if (!it.moveNext()) {
-      throw Exception("expect number for fields");
+      throw it.current.exception(filename, "expect number for fields");
     }
     var number = int.parse(it.current.text);
     if (!it.moveNext() || it.current.text != ';') {
-      throw Exception("expect ; after field declaration");
+      throw it.current.exception(filename, "expect ; after field declaration");
     }
 
     return FieldDescriptorProto(

@@ -13,3 +13,36 @@ message WithNested {
 	}
 	Node root = 1;
 }
+
+
+enum Color {
+	RED = 0;
+	GREEN = 1;
+	BLUE = 2;
+}
+
+message WithEnum {
+	Color color = 1;
+}
+
+message WithNestedEnum {
+	enum Live {
+		ALIVE = 0;
+		DEAD = 1;
+	}
+	Live live = 1;
+}
+
+
+/*
+TODO maybe need to handle crazy stuff like this
+message WithNestedEnum {
+	message Nested {
+		enum Live {
+			ALIVE = 0;
+			DEAD = 1;
+		}
+	}
+	Nested.Live live = 1;
+}
+*/

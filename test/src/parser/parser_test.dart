@@ -54,4 +54,56 @@ void main() {
 
     expect(fdp.package, 'org.egon12.proto');
   });
+
+  test('parse enum', () {
+    var filepath = './lib/proto/nested.proto';
+
+    var input = File(filepath).readAsStringSync();
+    var tokenizer = Tokenizer(input: input);
+    tokenizer.reportNewlines = false;
+    List<Token> tokens = [];
+
+    tokens.add(tokenizer.current()!);
+
+    while (tokenizer.next()) {
+      tokens.add(tokenizer.current()!);
+    }
+
+    var parser = Parser();
+    Iterator<Token> it = tokens.iterator;
+    var fdp = parser.file("nested.proto", it);
+
+    expect(fdp.enumType[0].name, 'Color');
+    expect(fdp.enumType[0].value[0].name, 'RED');
+    expect(fdp.enumType[0].value[0].number, 0);
+
+    expect(fdp.enumType[0].value[1].name, 'GREEN');
+    expect(fdp.enumType[0].value[1].number, 1);
+
+    expect(fdp.enumType[0].value[2].name, 'BLUE');
+    expect(fdp.enumType[0].value[2].number, 2);
+  });
+
+  test('parse nested enum', () {
+    var filepath = './lib/proto/nested.proto';
+
+    var input = File(filepath).readAsStringSync();
+    var tokenizer = Tokenizer(input: input);
+    tokenizer.reportNewlines = false;
+    List<Token> tokens = [];
+
+    tokens.add(tokenizer.current()!);
+
+    while (tokenizer.next()) {
+      tokens.add(tokenizer.current()!);
+    }
+
+    var parser = Parser();
+    Iterator<Token> it = tokens.iterator;
+    var fdp = parser.file("nested.proto", it);
+
+    expect(fdp.messageType[3].enumType[0].name, 'Live');
+    expect(fdp.messageType[3].enumType[0].value[0].name, 'ALIVE');
+    expect(fdp.messageType[3].enumType[0].value[1].name, 'DEAD');
+  });
 }

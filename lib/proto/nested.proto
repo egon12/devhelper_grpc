@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package org.egon12.proto;
+
+message Node {
+	string value = 1;
+	repeated Node children = 2;
+}
+
+message WithNested {
+	message Nested {
+		string value = 1;
+	}
+	Node root = 1;
+}

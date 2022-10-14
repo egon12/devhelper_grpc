@@ -58,22 +58,19 @@ void main() {
   test('complete', () {
     var tokenizer = Tokenizer(input: completeInput2);
     tokenizer.reportNewlines = false;
-    List<Token> tokens = [];
-    while (tokenizer.next()) {
-      tokens.add(tokenizer.current()!);
-    }
+    List<Token> tokens = tokenizer.toList();
 
-    expect(tokens[0].text, 'syntax');
-    expect(tokens[0].type, TokenType.identifier);
+    expect(tokens[1].text, 'syntax');
+    expect(tokens[1].type, TokenType.identifier);
 
-    expect(tokens[4].text, 'package');
-    expect(tokens[4].type, TokenType.identifier);
-
-    expect(tokens[5].text, 'org');
+    expect(tokens[5].text, 'package');
     expect(tokens[5].type, TokenType.identifier);
 
-    expect(tokens[6].text, '.');
-    expect(tokens[6].type, TokenType.symbol);
+    expect(tokens[6].text, 'org');
+    expect(tokens[6].type, TokenType.identifier);
+
+    expect(tokens[7].text, '.');
+    expect(tokens[7].type, TokenType.symbol);
   });
 }
 
